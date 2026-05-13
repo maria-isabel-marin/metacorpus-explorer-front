@@ -6,13 +6,21 @@ Esta primera entrega implementa la base de navegación **multi-corpus** y una in
 
 ## Objetivo de esta versión
 
-Esta versión resuelve la primera tarea funcional del frontend:
+Esta versión resuelve las siguientes tareas funcionales del frontend:
 
+**Tarea 1 - Base multi-corpus:**
 - selección de corpus desde una landing page
 - soporte para múltiples corpus con datos mock
 - navegación por rutas compartibles usando `slug`
 - layout persistente con indicador del corpus activo
 - redirección automática cuando solo exista un corpus
+
+**Tarea 2 - Explorador de metáforas conceptuales:**
+- listado de metáforas conceptuales con fórmulas X ES Y
+- filtros por tipología (ESTRUCTURAL, ONTOLÓGICA, ORIENTACIONAL)
+- filtros por dominio fuente y dominio meta
+- vista en tabla y tarjetas
+- descarga CSV de resultados filtrados
 
 ## Requisitos
 
@@ -63,6 +71,8 @@ npm run lint
   - redirección al dashboard del corpus
 - `/corpus/[slug]/dashboard`
   - dashboard inicial del corpus activo
+- `/corpus/[slug]/metaphors`
+  - explorador de metáforas conceptuales con filtros y descarga CSV
 
 ## Estructura del proyecto
 
@@ -70,6 +80,7 @@ npm run lint
 app/
   corpus/[slug]/
     dashboard/page.tsx
+    metaphors/page.tsx
     layout.tsx
     page.tsx
   globals.css
@@ -80,17 +91,34 @@ components/
   active-corpus-bar.tsx
   corpus-selector.tsx
   dashboard-overview.tsx
+  metaphor-explorer.tsx
+  metaphor-filters.tsx
+  metaphor-table.tsx
 lib/
   corpora.ts
+  metaphors.ts
 ```
 
-## Dónde editar los corpus mock
+## Dónde editar los datos mock
 
 Los corpus de prueba están definidos en:
 
 ```text
 lib/corpora.ts
 ```
+
+Las metáforas conceptuales de prueba están en:
+
+```text
+lib/metaphors.ts
+```
+
+Cada metáfora incluye:
+
+- `id` y `formula` (X ES Y)
+- `sourceDomain` y `targetDomain`
+- `typology` (ESTRUCTURAL, ONTOLÓGICA, ORIENTACIONAL, OTRA)
+- `expressions` (número de expresiones instancia)
 
 Cada corpus incluye:
 
@@ -109,18 +137,25 @@ Cada corpus incluye:
 
 ## Estado del proyecto
 
-Actualmente este repositorio contiene una **base frontend inicial**. Aún no incluye:
+Actualmente este repositorio contiene:
 
+**Implementado:**
+- base frontend multi-corpus con selector
+- dashboard inicial del corpus
+- **explorador de metáforas conceptuales** con filtros y descarga CSV
+
+**Pendiente:**
 - conexión con backend real
 - autenticación
-- filtros avanzados
-- exploradores completos de metáforas y dominios
-- visualizaciones analíticas conectadas a datos reales
+- explorador completo de dominios
+- visualizaciones analíticas (mapas radiales, estadísticas dinámicas)
+- concordancia KWIC
 
 ## Documentación adicional
 
-La documentación específica de esta tarea está en:
+La documentación específica de cada tarea está en:
  
 ```text
 docs/tarea-01-base-multi-corpus.md
+docs/tarea-02-explorador-metaforas.md
 ```
