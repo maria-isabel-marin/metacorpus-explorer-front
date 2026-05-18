@@ -1,5 +1,7 @@
 :root {
   --background: #f8fbff;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: "Raleway", system-ui, -apple-system, sans-serif;
   --surface: #ffffff;
   --surface-hover: #edf5ff;
   --surface-muted: #eef4fb;
@@ -34,7 +36,7 @@ body {
     radial-gradient(circle at top, rgba(36, 91, 155, 0.08), transparent 30%),
     var(--background);
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 a {
@@ -50,10 +52,15 @@ textarea {
 }
 
 .selector-shell,
-.dashboard-shell,
 .not-found-shell {
   width: min(calc(100% - 48px), var(--max-width));
   margin: 0 auto;
+}
+
+.dashboard-shell {
+  width: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 .selector-shell {
@@ -84,15 +91,14 @@ textarea {
 
 .selector-title {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(3rem, 7vw, 5rem);
-  font-weight: 600;
+  font-weight: 800;
   line-height: 0.96;
   letter-spacing: -0.04em;
 }
 
 .selector-title span {
-  font-style: italic;
   color: var(--primary);
 }
 
@@ -147,8 +153,9 @@ textarea {
 .dashboard-hero-card h1,
 .not-found-card h1 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 800;
   line-height: 1.05;
 }
 
@@ -314,17 +321,14 @@ textarea {
 }
 
 .active-corpus-title-row strong {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .active-corpus-title-row span {
   color: var(--text-soft);
   font-family: "Courier New", Courier, monospace;
-}
-
-.dashboard-shell {
-  padding: 28px 0 48px;
 }
 
 .dashboard-hero-card,
@@ -394,8 +398,9 @@ textarea {
 
 .info-panel h2 {
   margin: 12px 0 14px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.8rem;
+  font-weight: 800;
 }
 
 .info-panel-highlight {
@@ -478,10 +483,8 @@ textarea {
 
 /* Metaphor Explorer Styles */
 .metaphor-explorer-shell {
-  padding: 28px 0 48px;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  width: min(calc(100% - 48px), var(--max-width));
+  padding: 28px 32px 48px;
+  width: 100%;
 }
 
 .metaphor-explorer-header {
@@ -509,9 +512,9 @@ textarea {
 
 .metaphor-explorer-title {
   margin: 0 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(1.8rem, 4vw, 2.4rem);
-  font-weight: 600;
+  font-weight: 800;
   color: var(--text);
 }
 
@@ -622,8 +625,8 @@ textarea {
 
 .metaphor-explorer-content {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 28px;
+  grid-template-columns: 240px 1fr;
+  gap: 32px;
 }
 
 /* Filters Sidebar */
@@ -872,7 +875,7 @@ textarea {
 
 .metaphor-card-formula {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.1rem;
   color: var(--text);
   line-height: 1.4;
@@ -944,6 +947,15 @@ textarea {
 }
 
 @media (max-width: 600px) {
+  .metaphor-explorer-shell {
+    padding: 20px 16px 40px;
+  }
+
+  .dashboard-shell {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
   .metaphor-filters {
     grid-template-columns: 1fr;
   }
@@ -979,9 +991,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 12px 24px;
+  padding: 12px 32px;
   width: 100%;
 }
 
@@ -998,7 +1008,7 @@ textarea {
 }
 
 .brand-meta {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--text);
@@ -1006,11 +1016,10 @@ textarea {
 }
 
 .brand-corpus {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.4rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary);
-  font-style: italic;
   letter-spacing: -0.02em;
 }
 
@@ -1180,9 +1189,9 @@ textarea {
 
 .dashboard-title {
   margin: 8px 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(1.8rem, 4vw, 2.4rem);
-  font-weight: 600;
+  font-weight: 800;
   color: var(--text);
   line-height: 1.2;
 }
@@ -1345,9 +1354,9 @@ textarea {
 
 .dashboard-map-header h2 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -1391,9 +1400,9 @@ textarea {
 
 .dashboard-metaphors-header h2 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 
