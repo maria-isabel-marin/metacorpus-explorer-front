@@ -2,19 +2,48 @@ import { notFound } from "next/navigation";
 
 import { DashboardOverview } from "@/components/dashboard-overview";
 import { getCorpusBySlug } from "@/lib/corpora";
+import { fetchMetaphors, fetchCorpusStats } from "@/lib/api";
+import { mapApiMetaphorToConceptualMetaphor } from "@/lib/metaphors";
+import type { ConceptualMetaphor } from "@/lib/metaphors";
 
 type DashboardPageProps = {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 };
 
-export default function DashboardPage({ params }: DashboardPageProps) {
-  const corpus = getCorpusBySlug(params.slug);
+export default async function DashboardPage({ params }: DashboardPageProps) {
+  const { slug } = await params;
+  let corpus = getCorpusBySlug(slug);
 
   if (!corpus) {
     return notFound();
   }
 
-  return <DashboardOverview corpus={corpus} />;
+  try {
+    const stats = await fetchCorpusStats(slug);
+    const s = stats.estadisticas_agregadas;
+    corpus = {
+      ...corpus,
+      expressions: s.numero_registros,
+      metaphors: s.metaforas_conceptuales,
+      sourceDomains: s.dominios_por_tipo?.FUENTE ?? 0,
+      targetDomains: s.dominios_por_tipo?.META ?? 0,
+      textualSources: s.fuentes_textuales,
+      typologies: s.categorias_gramaticales,
+    };
+  } catch {
+    // keep static fallback
+  }
+
+  let topMetaphors: ConceptualMetaphor[] = [];
+  try {
+    const data = await fetchMetaphors(slug, { limit: 100 });
+    topMetaphors = data.items
+      .map(mapApiMetaphorToConceptualMetaphor)
+      .sort((a, b) => b.expressions - a.expressions)
+      .slice(0, 6);
+  } catch {
+    topMetaphors = [];
+  }
+
+  return <DashboardOverview corpus={corpus} topMetaphors={topMetaphors} />;
 }

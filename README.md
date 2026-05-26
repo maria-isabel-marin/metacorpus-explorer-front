@@ -2,7 +2,7 @@
 
 Frontend inicial de **MetaCorpus Explorer**, construido con **Next.js 14 + TypeScript + App Router**.
 
-Esta primera entrega implementa la base de navegación **multi-corpus** y una interfaz inicial inspirada en el mockup editorial compartido para el proyecto.
+Este proyecto implementa la base de navegación **multi-corpus**, el explorador de metáforas conceptuales y la conexión con datos reales a través de la API REST del backend.
 
 ## Objetivo de esta versión
 
@@ -22,10 +22,17 @@ Esta versión resuelve las siguientes tareas funcionales del frontend:
 - vista en tabla y tarjetas
 - descarga CSV de resultados filtrados
 
+**Tarea 3 - Datos reales en Metaphor Explorer:**
+- conexión del frontend con la API REST del backend
+- ingesta de datos reales de 2 corpus desde archivos Excel
+- landing page y dashboard con estadísticas reales desde la API
+- eliminación de mock data en favor de datos de producción
+
 ## Requisitos
 
 - Node.js 18 o superior
 - npm 9 o superior
+- Backend `metacorpus-explorer-back` corriendo (default: `http://localhost:3001`)
 
 ## Instalación
 
@@ -33,7 +40,17 @@ Esta versión resuelve las siguientes tareas funcionales del frontend:
 npm install
 ```
 
+## Variables de entorno
+
+Crear archivo `.env.local` en la raíz del proyecto:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
 ## Ejecución en desarrollo
+
+Primero asegurarse de que el backend esté corriendo, luego:
 
 ```bash
 npm run dev
@@ -95,38 +112,22 @@ components/
   metaphor-filters.tsx
   metaphor-table.tsx
 lib/
+  api.ts
   corpora.ts
   metaphors.ts
 ```
 
-## Dónde editar los datos mock
+## Fuentes de datos
 
-Los corpus de prueba están definidos en:
+Los datos se obtienen en tiempo real desde la API del backend:
 
-```text
-lib/corpora.ts
-```
+- **Estadísticas de corpus**: `GET /api/v1/corpora/:slug`
+- **Metáforas conceptuales**: `GET /api/v1/corpora/:slug/metaphors`
+- **Expresiones metafóricas**: `GET /api/v1/corpora/:slug/expressions`
 
-Las metáforas conceptuales de prueba están en:
+La capa de acceso a la API está en `lib/api.ts`.
 
-```text
-lib/metaphors.ts
-```
-
-Cada metáfora incluye:
-
-- `id` y `formula` (X ES Y)
-- `sourceDomain` y `targetDomain`
-- `typology` (ESTRUCTURAL, ONTOLÓGICA, ORIENTACIONAL, OTRA)
-- `expressions` (número de expresiones instancia)
-
-Cada corpus incluye:
-
-- `slug`
-- `name`
-- `description`
-- métricas base
-- metadatos de idioma, versión, licencia y fecha
+Los metadatos estáticos de cada corpus (slug, nombre, descripción) se mantienen en `lib/corpora.ts` como catálogo de referencia.
 
 ## Comportamiento actual
 
@@ -141,21 +142,24 @@ Actualmente este repositorio contiene:
 
 **Implementado:**
 - base frontend multi-corpus con selector
-- dashboard inicial del corpus
-- **explorador de metáforas conceptuales** con filtros y descarga CSV
+- dashboard inicial del corpus con estadísticas reales
+- explorador de metáforas conceptuales con filtros y descarga CSV
+- conexión con API REST del backend (datos reales)
+- ingesta de 2 corpus reales desde archivos Excel
 
 **Pendiente:**
-- conexión con backend real
 - autenticación
 - explorador completo de dominios
 - visualizaciones analíticas (mapas radiales, estadísticas dinámicas)
 - concordancia KWIC
+- paginación en explorador de metáforas
 
 ## Documentación adicional
 
 La documentación específica de cada tarea está en:
- 
+
 ```text
 docs/tarea-01-base-multi-corpus.md
 docs/tarea-02-explorador-metaforas.md
+docs/tarea-03-datos-reales-metaphor-explorer.md
 ```

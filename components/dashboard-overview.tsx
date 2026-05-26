@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import type { CorpusSummary } from "@/lib/corpora";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
-import { getMetaphorsByCorpusSlug } from "@/lib/metaphors";
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("es-CO").format(value);
@@ -12,13 +11,10 @@ function formatNumber(value: number) {
 
 type DashboardOverviewProps = {
   corpus: CorpusSummary;
+  topMetaphors: ConceptualMetaphor[];
 };
 
-export function DashboardOverview({ corpus }: DashboardOverviewProps) {
-  const metaphors = getMetaphorsByCorpusSlug(corpus.slug);
-  const topMetaphors = [...metaphors]
-    .sort((a, b) => b.expressions - a.expressions)
-    .slice(0, 6);
+export function DashboardOverview({ corpus, topMetaphors }: DashboardOverviewProps) {
 
   return (
     <main className="dashboard-shell">
