@@ -82,6 +82,34 @@ export async function fetchMetaphors(
   return { total: first.total, limit: maxItems, offset: 0, items: allItems };
 }
 
+export type ApiCorpusStats = {
+  slug: string;
+  nombre: string;
+  descripcion: string | null;
+  idioma: string;
+  version: string;
+  licencia: string | null;
+  fecha_publicacion: string | null;
+  estadisticas_agregadas: {
+    numero_registros: number;
+    fuentes_textuales: number;
+    dominios: number;
+    dominios_por_tipo: Record<string, number>;
+    metaforas_conceptuales: number;
+    relaciones_semanticas: number;
+    categorias_gramaticales: number;
+  };
+};
+
+export async function fetchCorpusStats(
+  slug: string
+): Promise<ApiCorpusStats> {
+  const raw = await apiFetch<{ data: ApiCorpusStats }>(
+    `/api/v1/corpora/${slug}`
+  );
+  return raw.data;
+}
+
 export async function fetchFilterOptions(
   slug: string
 ): Promise<ApiFilterOptions> {

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { DashboardOverview } from "@/components/dashboard-overview";
 import { getCorpusBySlug } from "@/lib/corpora";
-import { fetchMetaphors } from "@/lib/api";
+import { fetchMetaphors, fetchCorpusStats } from "@/lib/api";
 import { mapApiMetaphorToConceptualMetaphor } from "@/lib/metaphors";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 
@@ -12,10 +12,26 @@ type DashboardPageProps = {
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { slug } = await params;
-  const corpus = getCorpusBySlug(slug);
+  let corpus = getCorpusBySlug(slug);
 
   if (!corpus) {
     return notFound();
+  }
+
+  try {
+    const stats = await fetchCorpusStats(slug);
+    const s = stats.estadisticas_agregadas;
+    corpus = {
+      ...corpus,
+      expressions: s.numero_registros,
+      metaphors: s.metaforas_conceptuales,
+      sourceDomains: s.dominios_por_tipo?.FUENTE ?? 0,
+      targetDomains: s.dominios_por_tipo?.META ?? 0,
+      textualSources: s.fuentes_textuales,
+      typologies: s.categorias_gramaticales,
+    };
+  } catch {
+    // keep static fallback
   }
 
   let topMetaphors: ConceptualMetaphor[] = [];
