@@ -7,6 +7,8 @@ export type CorpusSummary = {
   metaphors: number;
   sourceDomains: number;
   targetDomains: number;
+  textualSources: number;
+  typologies: number;
   language: string;
   version: string;
   license: string;
@@ -25,6 +27,8 @@ export const corpusCatalog: CorpusSummary[] = [
     metaphors: 412,
     sourceDomains: 187,
     targetDomains: 94,
+    textualSources: 11,
+    typologies: 4,
     language: "ES",
     version: "1.0.0",
     license: "CC-BY-4.0",
@@ -41,6 +45,8 @@ export const corpusCatalog: CorpusSummary[] = [
     metaphors: 256,
     sourceDomains: 121,
     targetDomains: 63,
+    textualSources: 8,
+    typologies: 3,
     language: "ES",
     version: "0.8.2",
     license: "CC-BY-4.0",

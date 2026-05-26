@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { ActiveCorpusBar } from "@/components/active-corpus-bar";
+import { MainNavigation } from "@/components/main-navigation";
 import { getCorpusBySlug } from "@/lib/corpora";
 
 type CorpusLayoutProps = {
@@ -20,7 +20,7 @@ export default function CorpusLayout({ children, params }: CorpusLayoutProps) {
 
   return (
     <div className="corpus-layout-shell">
-      <ActiveCorpusBar corpus={corpus} />
+      <MainNavigation corpus={corpus} />
       {children}
     </div>
   );
