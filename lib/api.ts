@@ -101,6 +101,37 @@ export type ApiCorpusStats = {
   };
 };
 
+export type DomainType = "fuente" | "meta";
+
+export type ApiDomain = {
+  id: string;
+  nombre: string;
+  tipo: DomainType;
+  macrodominio: string | null;
+  frecuencia: number;
+  descripcion: string | null;
+  dominio_padre_id: string | null;
+  nivel_jerarquico: number;
+};
+
+export type ApiDomainRelation = {
+  dominio_id: string;
+  dominio_nombre: string;
+  relacionado_con_id: string;
+  relacionado_con_nombre: string;
+  tipo_relacion: "hiperonimia" | "hiponimia" | "meronimia" | "cohiperonimia" | "sinonimia";
+};
+
+export type ApiDomainsResponse = {
+  total: number;
+  items: ApiDomain[];
+};
+
+export type ApiDomainRelationsResponse = {
+  total: number;
+  items: ApiDomainRelation[];
+};
+
 export async function fetchCorpusStats(
   slug: string
 ): Promise<ApiCorpusStats> {
@@ -109,6 +140,70 @@ export async function fetchCorpusStats(
   );
   return raw.data;
 }
+
+export async function fetchDomains(
+  slug: string,
+  tipo?: DomainType
+): Promise<ApiDomainsResponse> {
+  const qs = tipo ? `?tipo=${tipo}` : "";
+  const raw = await apiFetch<{ data: ApiDomainsResponse }>(
+    `/api/v1/corpora/${slug}/domains${qs}`
+  );
+  return raw.data;
+}
+
+export async function fetchDomainRelations(
+  slug: string
+): Promise<ApiDomainRelationsResponse> {
+  const raw = await apiFetch<{ data: ApiDomainRelationsResponse }>(
+    `/api/v1/corpora/${slug}/domain-relations`
+  );
+  return raw.data;
+}
+
+// Build domain hierarchy tree from flat domain list
+export function buildDomainTree(domains: ApiDomain[]): TreeNode[] {
+  const domainMap = new Map<string, TreeNode>();
+  
+  // First pass: create nodes
+  for (const d of domains) {
+    domainMap.set(d.id, {
+      id: d.id,
+      nombre: d.nombre,
+      tipo: d.tipo,
+      macrodominio: d.macrodominio,
+      frecuencia: d.frecuencia,
+      nivel: d.nivel_jerarquico,
+      children: [],
+      expanded: d.nivel_jerarquico === 0 || d.nivel_jerarquico === 1,
+    });
+  }
+  
+  // Second pass: build tree
+  const roots: TreeNode[] = [];
+  for (const d of domains) {
+    const node = domainMap.get(d.id)!;
+    if (d.dominio_padre_id && domainMap.has(d.dominio_padre_id)) {
+      const parent = domainMap.get(d.dominio_padre_id)!;
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  
+  return roots;
+}
+
+export type TreeNode = {
+  id: string;
+  nombre: string;
+  tipo: DomainType;
+  macrodominio: string | null;
+  frecuencia: number;
+  nivel: number;
+  children: TreeNode[];
+  expanded: boolean;
+};
 
 export async function fetchFilterOptions(
   slug: string

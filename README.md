@@ -159,13 +159,15 @@ Actualmente este repositorio contiene:
 - conexión con API REST del backend (datos reales)
 - ingesta de 2 corpus reales desde archivos Excel
 - internacionalización (ES/EN) con selector de idioma y persistencia
+- explorador completo de dominios (tabla, árbol jerárquico, página de detalle)
+- mapa radial de metáforas con visualización interactiva dominio-fuente ↔ dominio-meta
+- relaciones semánticas entre dominios (hiperónimos, hipónimos, merónimos)
 
 **Pendiente:**
 - autenticación
-- explorador completo de dominios
-- visualizaciones analíticas (mapas radiales, estadísticas dinámicas)
 - concordancia KWIC
 - paginación en explorador de metáforas
+- dashboard analítico con estadísticas dinámicas
 
 ## Documentación adicional
 
@@ -176,4 +178,5 @@ docs/tarea-01-base-multi-corpus.md
 docs/tarea-02-explorador-metaforas.md
 docs/tarea-03-datos-reales-metaphor-explorer.md
 docs/tarea-04-internacionalizacion.md
+docs/tarea-05-explorador-dominios.md
 ```
