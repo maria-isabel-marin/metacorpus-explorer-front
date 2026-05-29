@@ -28,6 +28,13 @@ Esta versión resuelve las siguientes tareas funcionales del frontend:
 - landing page y dashboard con estadísticas reales desde la API
 - eliminación de mock data en favor de datos de producción
 
+**Tarea 4 - Gestión y visualización del idioma de la interfaz:**
+- soporte bilingüe completo: español e inglés
+- selector de idioma accesible en la landing y la barra de corpus
+- persistencia de preferencia en localStorage
+- detección automática del idioma del navegador
+- todos los textos de interfaz traducidos mediante diccionarios JSON
+
 ## Requisitos
 
 - Node.js 18 o superior
@@ -115,6 +122,11 @@ lib/
   api.ts
   corpora.ts
   metaphors.ts
+  i18n/
+    index.ts
+    language-context.tsx
+    es.json
+    en.json
 ```
 
 ## Fuentes de datos
@@ -146,6 +158,7 @@ Actualmente este repositorio contiene:
 - explorador de metáforas conceptuales con filtros y descarga CSV
 - conexión con API REST del backend (datos reales)
 - ingesta de 2 corpus reales desde archivos Excel
+- internacionalización (ES/EN) con selector de idioma y persistencia
 
 **Pendiente:**
 - autenticación
@@ -162,4 +175,5 @@ La documentación específica de cada tarea está en:
 docs/tarea-01-base-multi-corpus.md
 docs/tarea-02-explorador-metaforas.md
 docs/tarea-03-datos-reales-metaphor-explorer.md
+docs/tarea-04-internacionalizacion.md
 ```

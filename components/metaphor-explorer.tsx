@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 
 import { MetaphorFilters } from "./metaphor-filters";
 import { MetaphorTable } from "./metaphor-table";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 import type {
   ConceptualMetaphor,
@@ -25,6 +26,7 @@ export function MetaphorExplorer({
   filters,
   corpusName,
 }: MetaphorExplorerProps) {
+  const { t } = useLanguage();
   const [selectedTypologies, setSelectedTypologies] = useState<MetaphorTypology[]>([]);
   const [selectedSourceDomain, setSelectedSourceDomain] = useState<string>("all");
   const [selectedTargetDomain, setSelectedTargetDomain] = useState<string>("all");
@@ -34,7 +36,7 @@ export function MetaphorExplorer({
   const handleTypologyChange = useCallback((typology: MetaphorTypology) => {
     setSelectedTypologies((prev) =>
       prev.includes(typology)
-        ? prev.filter((t) => t !== typology)
+        ? prev.filter((typ) => typ !== typology)
         : [...prev, typology]
     );
   }, []);
@@ -86,11 +88,10 @@ export function MetaphorExplorer({
       <header className="metaphor-explorer-header">
         <div className="metaphor-explorer-title-row">
           <div>
-            <p className="metaphor-explorer-eyebrow">Explorador</p>
-            <h1 className="metaphor-explorer-title">Metáforas conceptuales</h1>
+            <p className="metaphor-explorer-eyebrow">{t.explorer.eyebrow}</p>
+            <h1 className="metaphor-explorer-title">{t.explorer.title}</h1>
             <p className="metaphor-explorer-subtitle">
-              {totalCount} fórmulas X ES Y normalizadas. 
-              Filtra por dominios o tipología; haz clic para ver todas las expresiones instancia.
+              {t.explorer.subtitle.replace("{count}", String(totalCount))}
             </p>
           </div>
         </div>
@@ -101,27 +102,27 @@ export function MetaphorExplorer({
             <button
               className={`view-toggle-btn ${viewMode === "table" ? "active" : ""}`}
               onClick={() => setViewMode("table")}
-              aria-label="Vista de tabla"
+              aria-label={t.explorer.tableViewLabel}
             >
               <span className="view-icon">≡</span>
-              <span>Tabla</span>
+              <span>{t.explorer.tableView}</span>
             </button>
             <button
               className={`view-toggle-btn ${viewMode === "cards" ? "active" : ""}`}
               onClick={() => setViewMode("cards")}
-              aria-label="Vista de tarjetas"
+              aria-label={t.explorer.cardsViewLabel}
             >
               <span className="view-icon">▦</span>
-              <span>Tarjetas</span>
+              <span>{t.explorer.cardsView}</span>
             </button>
           </div>
           <button
             className="download-btn"
             onClick={handleDownloadCSV}
-            aria-label="Descargar CSV"
+            aria-label={t.explorer.downloadCsvLabel}
           >
             <span className="download-icon">↓</span>
-            <span>CSV</span>
+            <span>{t.explorer.downloadCsv}</span>
           </button>
         </div>
       </header>
@@ -133,7 +134,7 @@ export function MetaphorExplorer({
         selectedGrammaticalCategory !== "") && (
         <div className="filter-status">
           <span className="filter-status-text">
-            Mostrando {filteredCount} de {totalCount} metáforas
+            {t.explorer.showing.replace("{filtered}", String(filteredCount)).replace("{total}", String(totalCount))}
           </span>
           <button
             className="clear-filters-btn"
@@ -144,7 +145,7 @@ export function MetaphorExplorer({
               setSelectedGrammaticalCategory("");
             }}
           >
-            Limpiar filtros
+            {t.explorer.clearFilters}
           </button>
         </div>
       )}
@@ -176,10 +177,12 @@ export function MetaphorExplorer({
 }
 
 function MetaphorCards({ metaphors }: { metaphors: ConceptualMetaphor[] }) {
+  const { t } = useLanguage();
+
   if (metaphors.length === 0) {
     return (
       <div className="metaphor-empty-state">
-        <p>No se encontraron metáforas con los filtros seleccionados.</p>
+        <p>{t.explorer.noResults}</p>
       </div>
     );
   }
@@ -191,11 +194,11 @@ function MetaphorCards({ metaphors }: { metaphors: ConceptualMetaphor[] }) {
           <h3 className="metaphor-card-formula">{metaphor.formula}</h3>
           <div className="metaphor-card-domains">
             <div className="metaphor-card-domain">
-              <span className="domain-label">Fuente:</span>
+              <span className="domain-label">{t.explorer.source}</span>
               <span className="domain-badge source">{metaphor.sourceDomain}</span>
             </div>
             <div className="metaphor-card-domain">
-              <span className="domain-label">Meta:</span>
+              <span className="domain-label">{t.explorer.target}</span>
               <span className="domain-badge target">{metaphor.targetDomain}</span>
             </div>
           </div>
@@ -203,7 +206,7 @@ function MetaphorCards({ metaphors }: { metaphors: ConceptualMetaphor[] }) {
             <span className={`typology-badge typology-${metaphor.typology.toLowerCase()}`}>
               {metaphor.typology}
             </span>
-            <span className="expressions-count">{metaphor.expressions} expresiones</span>
+            <span className="expressions-count">{t.explorer.expressionsCount.replace("{count}", String(metaphor.expressions))}</span>
           </div>
         </article>
       ))}

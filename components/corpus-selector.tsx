@@ -1,34 +1,41 @@
+"use client";
+
 import Link from "next/link";
 
 import type { CorpusSummary } from "@/lib/corpora";
-
-function formatExpressions(value: number) {
-  return new Intl.NumberFormat("es-CO").format(value);
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-CO", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(value));
-}
+import { useLanguage } from "@/lib/i18n/language-context";
+import { LanguageSelector } from "./language-selector";
 
 type CorpusSelectorProps = {
   corpora: CorpusSummary[];
 };
 
 export function CorpusSelector({ corpora }: CorpusSelectorProps) {
+  const { locale, t } = useLanguage();
+
+  function formatExpressions(value: number) {
+    return new Intl.NumberFormat(locale === "es" ? "es-CO" : "en-US").format(value);
+  }
+
+  function formatDate(value: string) {
+    return new Intl.DateTimeFormat(locale === "es" ? "es-CO" : "en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(value));
+  }
+
   return (
     <main className="selector-shell">
       <section className="selector-hero">
-        <h1 className="selector-title">
-          Meta<span>Corpus</span> Explorer
-        </h1>
+        <div className="selector-hero-top">
+          <h1 className="selector-title">
+            Meta<span>Corpus</span> Explorer
+          </h1>
+          <LanguageSelector />
+        </div>
         <p className="selector-description">
-          Plataforma multi-corpus para la exploración, búsqueda y visualización de
-          metáforas conceptuales anotadas con MIPVU. Selecciona un corpus para
-          comenzar tu sesión.
+          {t.landing.description}
         </p>
       </section>
 
@@ -49,33 +56,33 @@ export function CorpusSelector({ corpora }: CorpusSelectorProps) {
 
             <dl className="corpus-metrics">
               <div>
-                <dt>Expresiones</dt>
+                <dt>{t.landing.expressions}</dt>
                 <dd>{formatExpressions(corpus.expressions)}</dd>
               </div>
               <div>
-                <dt>Metáforas</dt>
+                <dt>{t.landing.metaphors}</dt>
                 <dd>{formatExpressions(corpus.metaphors)}</dd>
               </div>
               <div>
-                <dt>Dom. fuente</dt>
+                <dt>{t.landing.sourceDomains}</dt>
                 <dd>{formatExpressions(corpus.sourceDomains)}</dd>
               </div>
               <div>
-                <dt>Dom. meta</dt>
+                <dt>{t.landing.targetDomains}</dt>
                 <dd>{formatExpressions(corpus.targetDomains)}</dd>
               </div>
             </dl>
 
             <div className="corpus-card-footer">
               <div>
-                <p className="corpus-date-label">Publicado</p>
+                <p className="corpus-date-label">{t.landing.published}</p>
                 <p className="corpus-date">{formatDate(corpus.publicationDate)}</p>
               </div>
               <Link
                 className="explore-link"
                 href={`/corpus/${corpus.slug}/dashboard`}
               >
-                Explorar
+                {t.landing.explore}
               </Link>
             </div>
           </article>
@@ -83,8 +90,8 @@ export function CorpusSelector({ corpora }: CorpusSelectorProps) {
       </section>
 
       <footer className="selector-footer">
-        <span>MIPVU · Metaphor Identification Procedure Vrije Universiteit</span>
-        <span>Abierto · Citable · Interoperable · Reutilizable</span>
+        <span>{t.landing.footerMipvu}</span>
+        <span>{t.landing.footerOpen}</span>
       </footer>
     </main>
   );
