@@ -1,4 +1,7 @@
-const API_BASE = "/api";
+const API_BASE =
+  typeof window === "undefined"
+    ? process.env.API_URL_INTERNAL ?? "http://localhost:3001"
+    : "";
 
 export type ApiMetaphor = {
   id: string;
