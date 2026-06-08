@@ -34,16 +34,17 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     // keep static fallback
   }
 
-  let topMetaphors: ConceptualMetaphor[] = [];
+  let allMetaphors: ConceptualMetaphor[] = [];
   try {
     const data = await fetchMetaphors(slug, { limit: 100 });
-    topMetaphors = data.items
+    allMetaphors = data.items
       .map(mapApiMetaphorToConceptualMetaphor)
-      .sort((a, b) => b.expressions - a.expressions)
-      .slice(0, 6);
+      .sort((a, b) => b.expressions - a.expressions);
   } catch {
-    topMetaphors = [];
+    allMetaphors = [];
   }
 
-  return <DashboardOverview corpus={corpus} topMetaphors={topMetaphors} />;
+  const topMetaphors = allMetaphors.slice(0, 6);
+
+  return <DashboardOverview corpus={corpus} topMetaphors={topMetaphors} allMetaphors={allMetaphors} />;
 }

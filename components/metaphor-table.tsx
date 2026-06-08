@@ -1,14 +1,19 @@
+"use client";
+
 import type { ConceptualMetaphor } from "@/lib/metaphors";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 type MetaphorTableProps = {
   metaphors: ConceptualMetaphor[];
 };
 
 export function MetaphorTable({ metaphors }: MetaphorTableProps) {
+  const { t } = useLanguage();
+
   if (metaphors.length === 0) {
     return (
       <div className="metaphor-empty-state">
-        <p>No se encontraron metáforas con los filtros seleccionados.</p>
+        <p>{t.table.noResults}</p>
       </div>
     );
   }
@@ -18,11 +23,11 @@ export function MetaphorTable({ metaphors }: MetaphorTableProps) {
       <table className="metaphor-table">
         <thead>
           <tr>
-            <th className="metaphor-col-metaphor">Metáfora Conceptual</th>
-            <th className="metaphor-col-domain">Dominio Fuente</th>
-            <th className="metaphor-col-domain">Dominio Meta</th>
-            <th className="metaphor-col-typology">Tipología</th>
-            <th className="metaphor-col-expressions">Expresiones</th>
+            <th className="metaphor-col-metaphor">{t.table.conceptualMetaphor}</th>
+            <th className="metaphor-col-domain">{t.table.sourceDomain}</th>
+            <th className="metaphor-col-domain">{t.table.targetDomain}</th>
+            <th className="metaphor-col-typology">{t.table.typology}</th>
+            <th className="metaphor-col-expressions">{t.table.expressions}</th>
           </tr>
         </thead>
         <tbody>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Inter, Raleway } from "next/font/google";
 
 import "./globals.css";
+import { LanguageProvider } from "@/lib/i18n/language-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.variable} ${raleway.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${raleway.variable}`}>
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

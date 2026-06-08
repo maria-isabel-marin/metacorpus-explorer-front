@@ -1,0 +1,100 @@
+{
+  "landing": {
+    "title": "Meta<span>Corpus</span> Explorer",
+    "description": "Multi-corpus platform for exploring, searching, and visualizing conceptual metaphors annotated with MIPVU. Select a corpus to start your session.",
+    "expressions": "Expressions",
+    "metaphors": "Metaphors",
+    "sourceDomains": "Source dom.",
+    "targetDomains": "Target dom.",
+    "published": "Published",
+    "explore": "Explore",
+    "footerMipvu": "MIPVU · Metaphor Identification Procedure Vrije Universiteit",
+    "footerOpen": "Open · Citable · Interoperable · Reusable"
+  },
+  "activeCorpusBar": {
+    "exploring": "Exploring",
+    "changeCorpus": "Change corpus"
+  },
+  "dashboard": {
+    "activeCorpus": "ACTIVE CORPUS",
+    "exportCorpus": "Export corpus",
+    "howToCite": "How to cite",
+    "searchPlaceholder": "Search metaphors, domains, foci, expressions...",
+    "statsLabel": "Corpus statistics",
+    "expressions": "EXPRESSIONS",
+    "expressionsSub": "MIPVU · 20 fields",
+    "metaphors": "CONCEPTUAL MET.",
+    "metaphorsSub": "X IS Y formulas",
+    "sourceDomains": "SOURCE DOMAINS",
+    "sourceDomainsSub": "normalized",
+    "targetDomains": "TARGET DOMAINS",
+    "targetDomainsSub": "normalized",
+    "textualSources": "TEXTUAL SOURCES",
+    "textualSourcesSub": "documents",
+    "typologies": "TYPOLOGIES",
+    "typologiesSub": "structural, ont., ...",
+    "domainMap": "Domain map",
+    "openFullMap": "Open full map →",
+    "featuredMetaphors": "Featured metaphors",
+    "sortedByFrequency": "sorted by frequency",
+    "expr": "expr.",
+    "exploreBySource": "Explore by source domain",
+    "exploreByTarget": "Explore by target domain",
+    "domains": "domains",
+    "kwicConcordance": "KWIC Concordance",
+    "contextualSearch": "contextual search"
+  },
+  "explorer": {
+    "eyebrow": "Explorer",
+    "title": "Conceptual metaphors",
+    "subtitle": "{count} normalized X IS Y formulas. Filter by domains or typology; click to view all instance expressions.",
+    "tableView": "Table",
+    "cardsView": "Cards",
+    "tableViewLabel": "Table view",
+    "cardsViewLabel": "Cards view",
+    "downloadCsv": "CSV",
+    "downloadCsvLabel": "Download CSV",
+    "showing": "Showing {filtered} of {total} metaphors",
+    "clearFilters": "Clear filters",
+    "noResults": "No metaphors found with the selected filters.",
+    "source": "Source:",
+    "target": "Target:",
+    "expressionsCount": "{count} expressions"
+  },
+  "filters": {
+    "typology": "Typology",
+    "sourceDomain": "Source Domain",
+    "targetDomain": "Target Domain",
+    "grammaticalCategory": "Grammatical Category (Focus)",
+    "any": "— Any —"
+  },
+  "table": {
+    "conceptualMetaphor": "Conceptual Metaphor",
+    "sourceDomain": "Source Domain",
+    "targetDomain": "Target Domain",
+    "typology": "Typology",
+    "expressions": "Expressions",
+    "noResults": "No metaphors found with the selected filters."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The corpus or route requested does not exist in this version of the frontend.",
+    "backToSelector": "Back to selector"
+  },
+  "nav": {
+    "home": "Home",
+    "metaphors": "Metaphors",
+    "domains": "Domains",
+    "concordance": "Concordance",
+    "map": "Map",
+    "stats": "Statistics",
+    "about": "About",
+    "api": "API",
+    "changeCorpus": "Change"
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English"
+  }
+}

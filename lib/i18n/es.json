@@ -1,0 +1,100 @@
+{
+  "landing": {
+    "title": "Meta<span>Corpus</span> Explorer",
+    "description": "Plataforma multi-corpus para la exploración, búsqueda y visualización de metáforas conceptuales anotadas con MIPVU. Selecciona un corpus para comenzar tu sesión.",
+    "expressions": "Expresiones",
+    "metaphors": "Metáforas",
+    "sourceDomains": "Dom. fuente",
+    "targetDomains": "Dom. meta",
+    "published": "Publicado",
+    "explore": "Explorar",
+    "footerMipvu": "MIPVU · Metaphor Identification Procedure Vrije Universiteit",
+    "footerOpen": "Abierto · Citable · Interoperable · Reutilizable"
+  },
+  "activeCorpusBar": {
+    "exploring": "Explorando",
+    "changeCorpus": "Cambiar corpus"
+  },
+  "dashboard": {
+    "activeCorpus": "CORPUS ACTIVO",
+    "exportCorpus": "Exportar corpus",
+    "howToCite": "Cómo citar",
+    "searchPlaceholder": "Buscar metáforas, dominios, focos, expresiones...",
+    "statsLabel": "Estadísticas del corpus",
+    "expressions": "EXPRESIONES",
+    "expressionsSub": "MIPVU · 20 campos",
+    "metaphors": "METÁFORAS CONC.",
+    "metaphorsSub": "fórmulas X ES Y",
+    "sourceDomains": "DOMINIOS FUENTE",
+    "sourceDomainsSub": "normalizados",
+    "targetDomains": "DOMINIOS META",
+    "targetDomainsSub": "normalizados",
+    "textualSources": "FUENTES TEXTUALES",
+    "textualSourcesSub": "documentos",
+    "typologies": "TIPOLOGÍAS",
+    "typologiesSub": "estructural, ont., ...",
+    "domainMap": "Mapa de dominios",
+    "openFullMap": "Abrir mapa completo →",
+    "featuredMetaphors": "Metáforas destacadas",
+    "sortedByFrequency": "ordenadas por frecuencia",
+    "expr": "expr.",
+    "exploreBySource": "Explorar por dominio fuente",
+    "exploreByTarget": "Explorar por dominio meta",
+    "domains": "dominios",
+    "kwicConcordance": "Concordancia KWIC",
+    "contextualSearch": "búsqueda contextual"
+  },
+  "explorer": {
+    "eyebrow": "Explorador",
+    "title": "Metáforas conceptuales",
+    "subtitle": "{count} fórmulas X ES Y normalizadas. Filtra por dominios o tipología; haz clic para ver todas las expresiones instancia.",
+    "tableView": "Tabla",
+    "cardsView": "Tarjetas",
+    "tableViewLabel": "Vista de tabla",
+    "cardsViewLabel": "Vista de tarjetas",
+    "downloadCsv": "CSV",
+    "downloadCsvLabel": "Descargar CSV",
+    "showing": "Mostrando {filtered} de {total} metáforas",
+    "clearFilters": "Limpiar filtros",
+    "noResults": "No se encontraron metáforas con los filtros seleccionados.",
+    "source": "Fuente:",
+    "target": "Meta:",
+    "expressionsCount": "{count} expresiones"
+  },
+  "filters": {
+    "typology": "Tipología",
+    "sourceDomain": "Dominio Fuente",
+    "targetDomain": "Dominio Meta",
+    "grammaticalCategory": "Categoría Gramatical Foco",
+    "any": "— Cualquiera —"
+  },
+  "table": {
+    "conceptualMetaphor": "Metáfora Conceptual",
+    "sourceDomain": "Dominio Fuente",
+    "targetDomain": "Dominio Meta",
+    "typology": "Tipología",
+    "expressions": "Expresiones",
+    "noResults": "No se encontraron metáforas con los filtros seleccionados."
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "El corpus o la ruta solicitada no existen en esta versión inicial del frontend.",
+    "backToSelector": "Volver al selector"
+  },
+  "nav": {
+    "home": "Inicio",
+    "metaphors": "Metáforas",
+    "domains": "Dominios",
+    "concordance": "Concordancia",
+    "map": "Mapa",
+    "stats": "Estadísticas",
+    "about": "Acerca",
+    "api": "API",
+    "changeCorpus": "Cambiar"
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  }
+}
