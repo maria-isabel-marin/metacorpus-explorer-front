@@ -16,7 +16,7 @@ type MetaphorsPageProps = {
 
 export default async function MetaphorsPage({ params }: MetaphorsPageProps) {
   const { slug } = await params;
-  const corpus = getCorpusBySlug(slug);
+  const corpus = await getCorpusBySlug(slug);
 
   if (!corpus) {
     return notFound();

@@ -18,11 +18,12 @@ export function CorpusSelector({ corpora }: CorpusSelectorProps) {
   }
 
   function formatDate(value: string) {
+    const [year, month, day] = value.slice(0, 10).split("-").map(Number);
     return new Intl.DateTimeFormat(locale === "es" ? "es-CO" : "en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).format(new Date(value));
+    }).format(new Date(year, month - 1, day));
   }
 
   return (
@@ -48,11 +49,17 @@ export function CorpusSelector({ corpora }: CorpusSelectorProps) {
               <p className="corpus-copy">{corpus.description}</p>
             </div>
 
-            <div className="corpus-badges">
-              <span className="badge badge-soft">{corpus.language}</span>
-              <span className="badge">v{corpus.version}</span>
-              <span className="badge badge-accent">{corpus.license}</span>
-            </div>
+            <p className="corpus-meta-line">
+              <span>{corpus.language}</span>
+              <span aria-hidden="true">·</span>
+              <span>v{corpus.version}</span>
+              {corpus.license && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{corpus.license}</span>
+                </>
+              )}
+            </p>
 
             <dl className="corpus-metrics">
               <div>

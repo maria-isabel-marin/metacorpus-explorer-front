@@ -39,7 +39,7 @@ Esta versión resuelve las siguientes tareas funcionales del frontend:
 
 - Node.js 18 o superior
 - npm 9 o superior
-- Backend `metacorpus-explorer-back` corriendo (default: `http://localhost:3001`)
+- Backend `metacorpus-explorer-back` corriendo (default: `http://localhost:3000`)
 
 ## Instalación
 
@@ -52,7 +52,7 @@ npm install
 Crear archivo `.env.local` en la raíz del proyecto:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 ## Ejecución en desarrollo
@@ -66,7 +66,7 @@ npm run dev
 Luego abre en el navegador:
 
 ```bash
-http://localhost:3000
+http://localhost:3001
 ```
 
 ## Build de producción

@@ -6,13 +6,12 @@ import { getCorpusBySlug } from "@/lib/corpora";
 
 type CorpusLayoutProps = {
   children: ReactNode;
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 };
 
-export default function CorpusLayout({ children, params }: CorpusLayoutProps) {
-  const corpus = getCorpusBySlug(params.slug);
+export default async function CorpusLayout({ children, params }: CorpusLayoutProps) {
+  const { slug } = await params;
+  const corpus = await getCorpusBySlug(slug);
 
   if (!corpus) {
     return notFound();

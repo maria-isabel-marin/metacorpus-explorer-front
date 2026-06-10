@@ -83,6 +83,7 @@ export async function fetchMetaphors(
 }
 
 export type ApiCorpusStats = {
+  id?: string;
   slug: string;
   nombre: string;
   descripcion: string | null;
@@ -90,6 +91,16 @@ export type ApiCorpusStats = {
   version: string;
   licencia: string | null;
   fecha_publicacion: string | null;
+  doi?: string | null;
+  autores?: unknown;
+  metadatos_extra?: unknown;
+  como_citar?: string;
+  fair?: {
+    findable: { slug: string; doi: string | null; identificadores: string[] };
+    accessible: { activo: boolean; licencia: string | null };
+    interoperable: { idioma: string; formato_api: string; version_api: string };
+    reusable: { licencia: string | null; version: string; fecha_publicacion: string | null; autores: unknown };
+  };
   estadisticas_agregadas: {
     numero_registros: number;
     fuentes_textuales: number;
@@ -131,6 +142,22 @@ export type ApiDomainRelationsResponse = {
   total: number;
   items: ApiDomainRelation[];
 };
+
+export type ApiCorpusListItem = {
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  idioma: string;
+  version: string;
+  licencia: string | null;
+  fecha_publicacion: string | null;
+  numero_registros: number;
+};
+
+export async function fetchAllCorpora(): Promise<ApiCorpusListItem[]> {
+  const raw = await apiFetch<{ data: ApiCorpusListItem[] }>("/api/v1/corpora");
+  return raw.data;
+}
 
 export async function fetchCorpusStats(
   slug: string
@@ -226,4 +253,152 @@ export async function fetchFilterOptions(
     targetDomains: [...targetDomainSet].sort(),
     grammaticalCategories: [],
   };
+}
+
+// ========== EXPRESSIONS (CONCORDANCE) ==========
+
+export type ApiExpression = {
+  id: string;
+  id_registro: string;
+  orden: number;
+  expresion_metaforica: string;
+  contexto: string | null;
+  foco: string | null;
+  foco_lematizado: string | null;
+  significado_contextual: string | null;
+  significado_basico: string | null;
+  tipologia: string | null;
+  // Backend returns dominios nested in metafora_conceptual
+  dominio_fuente: { id: string; nombre: string } | null;
+  dominio_meta: { id: string; nombre: string } | null;
+  metafora_conceptual: {
+    id: string;
+    nombre: string;
+    tipologia?: string;
+    dominio_fuente?: { id: string; nombre: string; tipo?: string };
+    dominio_meta?: { id: string; nombre: string; tipo?: string };
+  } | null;
+  corresp_ontologicas: string | null;
+  corresp_epistemicas: string | null;
+  // Legacy aliases
+  correspondencias_ontologicas?: string | null;
+  correspondencias_epistemicas?: string | null;
+  observaciones: string | null;
+  fuente_textual: {
+    id: string;
+    titulo_1: string;
+    titulo_2: string | null;
+    titulo_3: string | null;
+    autor: string | null;
+    anio: number | null;
+    referencia_bib: string | null;
+  };
+  categoria_gramatical: { id: string; nombre: string; abreviatura: string } | null;
+  cat_gramatical?: { id: string; nombre: string; abreviatura: string } | null;
+  pagina: number | null;
+};
+
+export type ApiExpressionsResponse = {
+  total: number;
+  limit: number;
+  offset: number;
+  items: ApiExpression[];
+};
+
+export async function fetchExpressions(
+  slug: string,
+  params: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    dominio_fuente?: string;
+    dominio_meta?: string;
+    tipologia?: string;
+    orden?: "asc" | "desc";
+  } = {}
+): Promise<ApiExpressionsResponse> {
+  const qs = new URLSearchParams();
+  qs.set("limit", String(params.limit ?? 50));
+  qs.set("offset", String(params.offset ?? 0));
+  if (params.search) qs.set("search", params.search);
+  if (params.dominio_fuente) qs.set("dominio_fuente", params.dominio_fuente);
+  if (params.dominio_meta) qs.set("dominio_meta", params.dominio_meta);
+  if (params.tipologia) qs.set("tipologia", params.tipologia);
+  if (params.orden) qs.set("orden", params.orden);
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/expressions?${qs.toString()}`,
+      { cache: "no-store" }
+    );
+    
+    if (!res.ok) {
+      // Return empty response if API endpoint doesn't exist yet
+      if (res.status === 404) {
+        return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
+      }
+      throw new Error(`API error ${res.status}`);
+    }
+    
+    const raw = await res.json();
+    // Handle both { data: {...} } and direct response formats
+    const data = raw.data ?? raw;
+    return {
+      total: data.total ?? 0,
+      limit: data.limit ?? params.limit ?? 50,
+      offset: data.offset ?? params.offset ?? 0,
+      items: data.items ?? [],
+    };
+  } catch (error) {
+    console.error("fetchExpressions error:", error);
+    // Return empty response on error to prevent UI crash
+    return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
+  }
+}
+
+export async function fetchExpressionById(
+  slug: string,
+  id: string
+): Promise<ApiExpression | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/expressions/${id}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const raw = await res.json();
+    return raw.data ?? raw ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch expressions near a specific order (±5)
+export async function fetchNearbyExpressions(
+  slug: string,
+  expressionId: string,
+  sourceId: string,
+  orden: number,
+  range: number = 5
+): Promise<ApiExpression[]> {
+  const params = new URLSearchParams();
+  params.set("fuente_textual_id", sourceId);
+  params.set("orden_min", String(Math.max(0, orden - range)));
+  params.set("orden_max", String(orden + range));
+  params.set("limit", String(range * 2 + 1));
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/expressions?${params.toString()}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    const raw = await res.json();
+    const data = raw.data ?? raw;
+    const items = data.items ?? [];
+    // Exclude the current expression
+    return items.filter((e: ApiExpression) => e.id !== expressionId);
+  } catch {
+    return [];
+  }
 }

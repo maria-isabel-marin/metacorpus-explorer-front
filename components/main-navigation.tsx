@@ -19,7 +19,7 @@ const navItems: { key: NavKey; href: string }[] = [
   { key: "domains", href: "/domains" },
   { key: "concordance", href: "/concordance" },
   { key: "map", href: "/map" },
-  { key: "stats", href: "/stats" },
+  { key: "stats", href: "/statistics" },
   { key: "about", href: "/about" },
   { key: "api", href: "/api" },
 ];
