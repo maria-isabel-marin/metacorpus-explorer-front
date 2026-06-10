@@ -35,13 +35,12 @@ export function DomainDetail({
   const { t } = useLanguage();
 
   const getMacroColor = (category: string) => {
-    const colors: Record<string, string> = {
-      "Cuerpo y mundo físico": "#8b5a2b",
-      "Mundo mental": "#3b82f6",
-      "Mundo social": "#dc2626",
-      "Mundo natural": "#16a34a",
-    };
-    return colors[category] || "#6b7280";
+    const norm = category.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    if (norm.includes("fisico") || norm.includes("cuerpo")) return "#8b5a2b";
+    if (norm.includes("mental")) return "#3b82f6";
+    if (norm.includes("social")) return "#dc2626";
+    if (norm.includes("natural")) return "#16a34a";
+    return "#6b7280";
   };
 
   const getRelationColor = (type: string) => {
@@ -54,20 +53,39 @@ export function DomainDetail({
     return colors[type] || "#6b7280";
   };
 
-  // Build ego graph nodes
-  const egoNodes = [
-    { name: domain.name, type: "center", x: 150, y: 150 },
-    ...relatedDomains.flatMap((rel, relIdx) =>
-      rel.domains.map((d, i) => ({
-        name: d,
-        type: rel.type,
-        x: 150 + 100 * Math.cos(((relIdx * 2 + i) * Math.PI) / 3),
-        y: 150 + 100 * Math.sin(((relIdx * 2 + i) * Math.PI) / 3),
-      }))
+  const totalRelations = relatedDomains.reduce((sum, r) => sum + r.domains.length, 0);
+
+  // Build ego graph: metaphor-linked domains + semantic relations
+  type EgoNode = { name: string; nodeType: "source" | "target" | "semantic"; color: string; x: number; y: number };
+
+  const SOURCE_NODE_COLOR = "#3b5998";
+  const TARGET_NODE_COLOR = "#a0522d";
+  const SEMANTIC_NODE_COLOR = "#6b7280";
+
+  const rawNodes: Omit<EgoNode, "x" | "y">[] = [
+    // Domains from metaphors where this domain is SOURCE → show target domains
+    ...sourceMetaphors.map(m => ({ name: m.targetDomain, nodeType: "target" as const, color: TARGET_NODE_COLOR })),
+    // Domains from metaphors where this domain is TARGET → show source domains
+    ...targetMetaphors.map(m => ({ name: m.sourceDomain, nodeType: "source" as const, color: SOURCE_NODE_COLOR })),
+    // Semantic relation domains
+    ...relatedDomains.flatMap(rel =>
+      rel.domains.map(d => ({ name: d, nodeType: "semantic" as const, color: getRelationColor(rel.type) }))
     ),
   ];
 
-  const totalRelations = relatedDomains.reduce((sum, r) => sum + r.domains.length, 0);
+  // Deduplicate by name
+  const seen = new Set<string>();
+  const uniqueNodes = rawNodes.filter(n => {
+    if (seen.has(n.name)) return false;
+    seen.add(n.name);
+    return true;
+  });
+
+  const CX = 150, CY = 150, RADIUS = 105;
+  const egoSatellites: EgoNode[] = uniqueNodes.map((n, i) => {
+    const angle = (i / uniqueNodes.length) * 2 * Math.PI - Math.PI / 2;
+    return { ...n, x: CX + RADIUS * Math.cos(angle), y: CY + RADIUS * Math.sin(angle) };
+  });
 
   return (
     <main className="domain-detail-shell">
@@ -98,12 +116,14 @@ export function DomainDetail({
         </p>
         <h1 className="domain-title">{domain.name}</h1>
         <div className="domain-badges">
-          <span
-            className="domain-badge macro"
-            style={{ borderColor: getMacroColor(domain.macroCategory) }}
-          >
-            {domain.macroCategory.toUpperCase()}
-          </span>
+          {domain.macroCategory && (
+            <span
+              className="domain-badge macro"
+              style={{ borderColor: getMacroColor(domain.macroCategory) }}
+            >
+              {domain.macroCategory.toUpperCase()}
+            </span>
+          )}
           <span className="domain-badge count">
             {domain.expressionCount} {t.domainDetail?.expressions || "EXPRESIONES"}
           </span>
@@ -210,62 +230,77 @@ export function DomainDetail({
             <h2>{t.domainDetail?.egoGraph || "Grafo ego-céntrico"}</h2>
             <svg className="ego-graph" viewBox="0 0 300 300">
               {/* Edges */}
-              {egoNodes.slice(1).map((node, i) => (
+              {egoSatellites.map((node, i) => (
                 <line
                   key={i}
-                  x1={150}
-                  y1={150}
-                  x2={node.x}
-                  y2={node.y}
-                  stroke={getRelationColor(node.type)}
-                  strokeWidth={1.5}
-                  strokeDasharray={node.type === "hiponimo" ? "4,2" : undefined}
+                  x1={CX} y1={CY}
+                  x2={node.x} y2={node.y}
+                  stroke={node.color}
+                  strokeWidth={1.2}
+                  strokeOpacity={0.5}
                 />
               ))}
-              
-              {/* Center node */}
-              <circle
-                cx={150}
-                cy={150}
-                r={28}
-                fill={getMacroColor(domain.macroCategory)}
-                stroke="white"
-                strokeWidth={2}
-              />
-              <text
-                x={150}
-                y={155}
-                textAnchor="middle"
-                fill="white"
-                fontSize={9}
-                fontWeight={600}
-              >
-                {domain.name.slice(0, 8)}
-              </text>
 
-              {/* Related nodes */}
-              {egoNodes.slice(1).map((node, i) => (
+              {/* Satellite nodes */}
+              {egoSatellites.map((node, i) => (
                 <g key={i}>
-                  <circle
-                    cx={node.x}
-                    cy={node.y}
-                    r={18}
-                    fill="var(--surface)"
-                    stroke={getRelationColor(node.type)}
-                    strokeWidth={1.5}
-                  />
+                  <circle cx={node.x} cy={node.y} r={16} fill="white" stroke={node.color} strokeWidth={1.5} />
                   <text
-                    x={node.x}
-                    y={node.y + 3}
+                    x={node.x} y={node.y + 4}
                     textAnchor="middle"
                     fill="var(--text)"
-                    fontSize={7}
+                    fontSize={6.5}
+                    fontWeight={500}
                   >
-                    {node.name.slice(0, 10)}
+                    {node.name.length > 9 ? node.name.slice(0, 8) + "…" : node.name}
                   </text>
                 </g>
               ))}
+
+              {/* Center node */}
+              <circle
+                cx={CX} cy={CY} r={28}
+                fill={getMacroColor(domain.macroCategory || "")}
+                stroke="white" strokeWidth={2}
+              />
+              <text x={CX} y={CY - 3} textAnchor="middle" fill="white" fontSize={8} fontWeight={700}>
+                {domain.name.length > 8 ? domain.name.slice(0, 7) + "…" : domain.name}
+              </text>
+              <text x={CX} y={CY + 9} textAnchor="middle" fill="rgba(255,255,255,0.75)" fontSize={6.5}>
+                {domain.type === "fuente" ? "FUENTE" : "META"}
+              </text>
+
+              {/* Empty state */}
+              {egoSatellites.length === 0 && (
+                <text x={CX} y={220} textAnchor="middle" fill="var(--text-faint)" fontSize={9}>
+                  Sin conexiones registradas
+                </text>
+              )}
             </svg>
+
+            {/* Legend */}
+            {(sourceMetaphors.length > 0 || targetMetaphors.length > 0) && (
+              <div className="ego-legend">
+                {targetMetaphors.length > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: SOURCE_NODE_COLOR }} />
+                    dom. fuente
+                  </span>
+                )}
+                {sourceMetaphors.length > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: TARGET_NODE_COLOR }} />
+                    dom. meta
+                  </span>
+                )}
+                {totalRelations > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: SEMANTIC_NODE_COLOR }} />
+                    rel. semántica
+                  </span>
+                )}
+              </div>
+            )}
           </section>
         </aside>
       </div>
@@ -274,10 +309,10 @@ export function DomainDetail({
 }
 
 function getTypologyLabel(typology: string | null) {
-  const labels: Record<string, string> = {
-    "ESTRUCTURAL": "Estructural",
-    "ONTOLOGICA": "Ontológica",
-    "ORIENTACIONAL": "Orientacional",
-  };
-  return labels[typology || ""] || typology || "—";
+  if (!typology) return "—";
+  const norm = typology.toUpperCase().normalize("NFD").replace(/\p{M}/gu, "");
+  if (norm.includes("ESTRUCTURAL")) return "Estructural";
+  if (norm.includes("ONTOLOG")) return "Ontológica";
+  if (norm.includes("ORIENTAC")) return "Orientacional";
+  return typology;
 }

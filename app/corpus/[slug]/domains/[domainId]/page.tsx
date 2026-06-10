@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { DomainDetail } from "@/components/domain-detail";
 import { getCorpusBySlug } from "@/lib/corpora";
-import { fetchDomains, fetchMetaphors } from "@/lib/api";
+import { fetchDomains, fetchMetaphors, fetchDomainRelations } from "@/lib/api";
 import { mapApiMetaphorToConceptualMetaphor } from "@/lib/metaphors";
 
 type DomainDetailPageProps = {
@@ -12,7 +12,7 @@ type DomainDetailPageProps = {
 export default async function DomainDetailPage({ params }: DomainDetailPageProps) {
   const { slug, domainId } = await params;
   
-  const corpus = getCorpusBySlug(slug);
+  const corpus = await getCorpusBySlug(slug);
   if (!corpus) {
     return notFound();
   }
@@ -20,7 +20,7 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
   // Fetch domain info
   let domainName = decodeURIComponent(domainId).toUpperCase();
   let domainType: "fuente" | "meta" = "fuente";
-  let macroCategory = "Cuerpo y mundo físico";
+  let macroCategory: string | null = null;
   let expressionCount = 0;
   let metaphorCount = 0;
 
@@ -32,7 +32,7 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
     if (domain) {
       domainName = domain.nombre;
       domainType = domain.tipo;
-      macroCategory = domain.macrodominio || macroCategory;
+      macroCategory = domain.macrodominio ?? null;
       expressionCount = domain.frecuencia;
     }
   } catch {
@@ -46,14 +46,14 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
   try {
     const allData = await fetchMetaphors(slug, { limit: 500 });
     const allMetaphors = allData.items.map(mapApiMetaphorToConceptualMetaphor);
-    
+
     sourceMetaphors = allMetaphors.filter(
       m => m.sourceDomain?.toUpperCase() === domainName.toUpperCase()
     );
     targetMetaphors = allMetaphors.filter(
       m => m.targetDomain?.toUpperCase() === domainName.toUpperCase()
     );
-    
+
     metaphorCount = sourceMetaphors.length + targetMetaphors.length;
     if (expressionCount === 0) {
       expressionCount = [...sourceMetaphors, ...targetMetaphors].reduce(
@@ -64,9 +64,49 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
     // Fallback to empty
   }
 
-  // Build semantic relations from other domains
-  // (This would come from API in production)
-  const relatedDomains = buildMockRelations(domainName, domainType);
+  // Fetch real semantic relations from API
+  type RelatedDomain = {
+    type: "hiponimo" | "hiperonimo" | "meronimo" | "holonimo";
+    label: string;
+    domains: string[];
+  };
+
+  const relatedDomains: RelatedDomain[] = [];
+  try {
+    const relationsData = await fetchDomainRelations(slug);
+    const relTypeMap: Record<string, RelatedDomain["type"]> = {
+      hiperonimia: "hiperonimo",
+      hiponimia: "hiponimo",
+      meronimia: "meronimo",
+      holonimia: "holonimo",
+    };
+    const relLabelMap: Record<string, string> = {
+      hiperonimia: "HIPERÓNIMOS (ES-UN-TIPO-DE)",
+      hiponimia: "HIPÓNIMOS (TIENE-COMO-SUBTIPO)",
+      meronimia: "MERÓNIMOS (TIENE-COMO-PARTE)",
+      holonimia: "HOLÓNIMOS (ES-PARTE-DE)",
+    };
+    const grouped = new Map<string, string[]>();
+    for (const rel of relationsData.items) {
+      if (rel.dominio_nombre.toUpperCase() === domainName.toUpperCase()) {
+        const key = rel.tipo_relacion.toLowerCase();
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key)!.push(rel.relacionado_con_nombre);
+      }
+    }
+    for (const [tipo, domains] of grouped.entries()) {
+      const mappedType = relTypeMap[tipo];
+      if (mappedType) {
+        relatedDomains.push({
+          type: mappedType,
+          label: relLabelMap[tipo] ?? tipo.toUpperCase(),
+          domains,
+        });
+      }
+    }
+  } catch {
+    // Fallback to empty relations
+  }
 
   return (
     <DomainDetail
@@ -75,7 +115,7 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
         id: domainId,
         name: domainName,
         type: domainType,
-        macroCategory,
+        macroCategory: macroCategory ?? "",
         expressionCount,
         metaphorCount,
       }}
@@ -84,50 +124,4 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
       targetMetaphors={targetMetaphors.slice(0, 10)}
     />
   );
-}
-
-// Mock relations builder - would be replaced with API data
-function buildMockRelations(domainName: string, type: "fuente" | "meta") {
-  const relations: {
-    type: "hiponimo" | "hiperonimo" | "meronimo" | "holonimo";
-    label: string;
-    domains: string[];
-  }[] = [];
-
-  // Define some hierarchical relationships
-  const hierarchy: Record<string, { parent?: string; children?: string[]; parts?: string[] }> = {
-    "CONSTRUCCIÓN": { children: ["EDIFICIO", "CIMENTO", "PUENTE"] },
-    "EDIFICIO": { parent: "CONSTRUCCIÓN", parts: ["CIMENTO"], children: [] },
-    "CIMENTO": { parent: "EDIFICIO" },
-    "PLANTA": { children: ["SEMILLA", "RAÍZ"] },
-    "AGUA": { children: ["RÍO"] },
-  };
-
-  const info = hierarchy[domainName];
-  
-  if (info?.parent) {
-    relations.push({
-      type: "hiperonimo",
-      label: "HIPERÓNIMOS (ES-UN-TIPO-DE)",
-      domains: [info.parent],
-    });
-  }
-  
-  if (info?.children && info.children.length > 0) {
-    relations.push({
-      type: "hiponimo",
-      label: "HIPÓNIMOS (TIENE-COMO-SUBTIPO)",
-      domains: info.children,
-    });
-  }
-  
-  if (info?.parts && info.parts.length > 0) {
-    relations.push({
-      type: "meronimo",
-      label: "MERÓNIMOS (TIENE-COMO-PARTE)",
-      domains: info.parts,
-    });
-  }
-
-  return relations;
 }
