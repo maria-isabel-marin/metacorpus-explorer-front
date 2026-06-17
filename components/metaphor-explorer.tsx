@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { MetaphorFilters } from "./metaphor-filters";
 import { MetaphorTable } from "./metaphor-table";
@@ -19,14 +21,23 @@ type MetaphorExplorerProps = {
   metaphors: ConceptualMetaphor[];
   filters: FilterOptions;
   corpusName: string;
+  corpusSlug: string;
+  currentPage: number;
+  totalPages: number;
+  total: number;
 };
 
 export function MetaphorExplorer({
   metaphors,
   filters,
   corpusName,
+  corpusSlug,
+  currentPage,
+  totalPages,
+  total,
 }: MetaphorExplorerProps) {
   const { t } = useLanguage();
+  const router = useRouter();
   const [selectedTypologies, setSelectedTypologies] = useState<MetaphorTypology[]>([]);
   const [selectedSourceDomain, setSelectedSourceDomain] = useState<string>("all");
   const [selectedTargetDomain, setSelectedTargetDomain] = useState<string>("all");
@@ -79,7 +90,15 @@ export function MetaphorExplorer({
     document.body.removeChild(link);
   }, [filteredMetaphors, corpusName]);
 
-  const totalCount = metaphors.length;
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      router.push(`/corpus/${corpusSlug}/metaphors?page=${page}`);
+    }
+  };
+
+  const pageSize = 50;
+  const showingFrom = (currentPage - 1) * pageSize + 1;
+  const showingTo = Math.min(currentPage * pageSize, total);
   const filteredCount = filteredMetaphors.length;
 
   return (
@@ -91,7 +110,7 @@ export function MetaphorExplorer({
             <p className="metaphor-explorer-eyebrow">{t.explorer.eyebrow}</p>
             <h1 className="metaphor-explorer-title">{t.explorer.title}</h1>
             <p className="metaphor-explorer-subtitle">
-              {t.explorer.subtitle.replace("{count}", String(totalCount))}
+              {t.explorer.subtitle.replace("{count}", String(total))}
             </p>
           </div>
         </div>
@@ -134,7 +153,7 @@ export function MetaphorExplorer({
         selectedGrammaticalCategory !== "") && (
         <div className="filter-status">
           <span className="filter-status-text">
-            {t.explorer.showing.replace("{filtered}", String(filteredCount)).replace("{total}", String(totalCount))}
+            {t.explorer.showing.replace("{filtered}", String(filteredCount)).replace("{total}", String(total))}
           </span>
           <button
             className="clear-filters-btn"
@@ -166,17 +185,47 @@ export function MetaphorExplorer({
 
         <div className="metaphor-results">
           {viewMode === "table" ? (
-            <MetaphorTable metaphors={filteredMetaphors} />
+            <MetaphorTable metaphors={filteredMetaphors} corpusSlug={corpusSlug} />
           ) : (
-            <MetaphorCards metaphors={filteredMetaphors} />
+            <MetaphorCards metaphors={filteredMetaphors} corpusSlug={corpusSlug} />
           )}
         </div>
       </div>
+
+      {/* Pagination - fuera del grid de contenido */}
+      {totalPages > 1 && (
+        <div className="metaphor-pagination-wrapper">
+          <div className="metaphor-pagination">
+            <div className="pagination-info">
+              <span>{showingFrom}-{showingTo} de {total} metáforas</span>
+            </div>
+            <div className="pagination-controls">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="pagination-button"
+              >
+                ← Anterior
+              </button>
+              <span className="pagination-current">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="pagination-button"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-function MetaphorCards({ metaphors }: { metaphors: ConceptualMetaphor[] }) {
+function MetaphorCards({ metaphors, corpusSlug }: { metaphors: ConceptualMetaphor[]; corpusSlug: string }) {
   const { t } = useLanguage();
 
   if (metaphors.length === 0) {
@@ -190,25 +239,31 @@ function MetaphorCards({ metaphors }: { metaphors: ConceptualMetaphor[] }) {
   return (
     <div className="metaphor-cards-grid">
       {metaphors.map((metaphor) => (
-        <article key={metaphor.id} className="metaphor-card">
-          <h3 className="metaphor-card-formula">{metaphor.formula}</h3>
-          <div className="metaphor-card-domains">
-            <div className="metaphor-card-domain">
-              <span className="domain-label">{t.explorer.source}</span>
-              <span className="domain-badge source">{metaphor.sourceDomain}</span>
+        <Link
+          key={metaphor.id}
+          href={`/corpus/${corpusSlug}/metaphors/${metaphor.id}`}
+          className="metaphor-card-link"
+        >
+          <article className="metaphor-card">
+            <h3 className="metaphor-card-formula">{metaphor.formula}</h3>
+            <div className="metaphor-card-domains">
+              <div className="metaphor-card-domain">
+                <span className="domain-label">{t.explorer.source}</span>
+                <span className="domain-badge source">{metaphor.sourceDomain}</span>
+              </div>
+              <div className="metaphor-card-domain">
+                <span className="domain-label">{t.explorer.target}</span>
+                <span className="domain-badge target">{metaphor.targetDomain}</span>
+              </div>
             </div>
-            <div className="metaphor-card-domain">
-              <span className="domain-label">{t.explorer.target}</span>
-              <span className="domain-badge target">{metaphor.targetDomain}</span>
+            <div className="metaphor-card-meta">
+              <span className={`typology-badge typology-${metaphor.typology.toLowerCase()}`}>
+                {metaphor.typology}
+              </span>
+              <span className="expressions-count">{t.explorer.expressionsCount.replace("{count}", String(metaphor.expressions))}</span>
             </div>
-          </div>
-          <div className="metaphor-card-meta">
-            <span className={`typology-badge typology-${metaphor.typology.toLowerCase()}`}>
-              {metaphor.typology}
-            </span>
-            <span className="expressions-count">{t.explorer.expressionsCount.replace("{count}", String(metaphor.expressions))}</span>
-          </div>
-        </article>
+          </article>
+        </Link>
       ))}
     </div>
   );

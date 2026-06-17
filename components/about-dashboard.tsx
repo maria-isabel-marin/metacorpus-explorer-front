@@ -46,7 +46,7 @@ type AboutDashboardProps = {
 };
 
 // FAIR Cards Component
-function FairCards({ fair }: { fair?: AboutDashboardProps["details"]["fair"] }) {
+function FairCards({ fair }: { fair?: { findable: unknown; accessible: unknown; interoperable: unknown; reusable: unknown } | undefined }) {
   const cards = [
     {
       letter: "F",

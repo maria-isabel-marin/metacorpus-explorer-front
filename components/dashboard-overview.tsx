@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import type { CorpusSummary } from "@/lib/corpora";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { DomainMap } from "./domain-map";
+import { downloadMetaphorsAsCSV } from "@/lib/metaphors";
 
 type DashboardOverviewProps = {
   corpus: CorpusSummary;
@@ -15,6 +18,8 @@ type DashboardOverviewProps = {
 
 export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: DashboardOverviewProps) {
   const { locale, t } = useLanguage();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
 
   function formatNumber(value: number) {
     return new Intl.NumberFormat(locale === "es" ? "es-CO" : "en-US").format(value);
@@ -31,21 +36,44 @@ export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: Dashbo
         </div>
 
         <div className="dashboard-header-actions">
-          <button className="dashboard-action-btn dashboard-action-btn-secondary">
+          <button
+            className="dashboard-action-btn dashboard-action-btn-secondary"
+            onClick={() => {
+              const csv = downloadMetaphorsAsCSV(allMetaphors);
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const link = document.createElement("a");
+              link.href = URL.createObjectURL(blob);
+              link.download = `corpus-${corpus.slug}-metaphors.csv`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
             {t.dashboard.exportCorpus}
           </button>
-          <button className="dashboard-action-btn dashboard-action-btn-primary">
+          <Link
+            href={`/corpus/${corpus.slug}/about`}
+            className="dashboard-action-btn dashboard-action-btn-primary"
+          >
             {t.dashboard.howToCite}
-          </button>
+          </Link>
         </div>
       </section>
 
       {/* Search Bar */}
       <section className="dashboard-search-section">
-        <div className="dashboard-search-box">
+        <form
+          className="dashboard-search-box"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              router.push(`/corpus/${corpus.slug}/concordance?q=${encodeURIComponent(searchQuery.trim())}`);
+            }
+          }}
+        >
           <svg className="dashboard-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
@@ -54,13 +82,15 @@ export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: Dashbo
             type="text"
             placeholder={t.dashboard.searchPlaceholder}
             className="dashboard-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button className="dashboard-search-shortcut">
+          <button type="submit" className="dashboard-search-shortcut">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
-        </div>
+        </form>
       </section>
 
       {/* Stats Grid - 6 metrics */}
@@ -127,7 +157,7 @@ export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: Dashbo
             {topMetaphors.map((metaphor) => (
               <li key={metaphor.id} className="dashboard-metaphor-item">
                 <Link
-                  href={`/corpus/${corpus.slug}/metaphors`}
+                  href={`/corpus/${corpus.slug}/metaphors/${metaphor.id}`}
                   className="dashboard-metaphor-link"
                 >
                   <span className="dashboard-metaphor-formula">{metaphor.formula}</span>
@@ -141,7 +171,7 @@ export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: Dashbo
 
       {/* Bottom Cards */}
       <section className="dashboard-bottom-cards">
-        <Link href={`/corpus/${corpus.slug}/metaphors?filter=source`} className="dashboard-explore-card">
+        <Link href={`/corpus/${corpus.slug}/domains?tipo=fuente`} className="dashboard-explore-card">
           <div className="dashboard-explore-content">
             <h3>{t.dashboard.exploreBySource}</h3>
             <p>{corpus.sourceDomains} {t.dashboard.domains}</p>
@@ -151,7 +181,7 @@ export function DashboardOverview({ corpus, topMetaphors, allMetaphors }: Dashbo
           </svg>
         </Link>
 
-        <Link href={`/corpus/${corpus.slug}/metaphors?filter=target`} className="dashboard-explore-card">
+        <Link href={`/corpus/${corpus.slug}/domains?tipo=meta`} className="dashboard-explore-card">
           <div className="dashboard-explore-content">
             <h3>{t.dashboard.exploreByTarget}</h3>
             <p>{corpus.targetDomains} {t.dashboard.domains}</p>

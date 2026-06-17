@@ -53,21 +53,21 @@ export function ConcordanceExplorer({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
+    if (search) params.set("q", search);
     if (activeTypology !== "all") params.set("tipologia", activeTypology);
     router.push(`/corpus/${corpus.slug}/concordance?${params.toString()}`);
   };
 
   const handleTypologyChange = (typology: string) => {
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
+    if (search) params.set("q", search);
     if (typology !== "all") params.set("tipologia", typology);
     router.push(`/corpus/${corpus.slug}/concordance?${params.toString()}`);
   };
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
+    if (search) params.set("q", search);
     if (activeTypology !== "all") params.set("tipologia", activeTypology);
     if (sortBy !== "orden") params.set("sort", sortBy);
     if (page > 1) params.set("page", String(page));
@@ -77,7 +77,7 @@ export function ConcordanceExplorer({
   const handleSortChange = (newSort: SortOption) => {
     setSortBy(newSort);
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
+    if (search) params.set("q", search);
     if (activeTypology !== "all") params.set("tipologia", activeTypology);
     params.set("sort", newSort);
     router.push(`/corpus/${corpus.slug}/concordance?${params.toString()}`);

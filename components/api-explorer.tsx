@@ -84,6 +84,32 @@ function buildEndpoints(slug: string): Endpoint[] {
       path: `/api/v1/corpora/${slug}/domain-relations`,
       description: "Relaciones semánticas entre dominios (hiperonimia, hiponimia, meronimia, etc.).",
     },
+    {
+      method: "GET",
+      path: `/api/v1/corpora/${slug}/stats/density`,
+      description: "Densidad metafórica por orden: distribución de expresiones en buckets según posición en texto.",
+      params: [
+        { name: "bucket", type: "integer", required: false, description: "Tamaño del bucket (default 100, min 10, max 1000)" },
+      ],
+    },
+    {
+      method: "GET",
+      path: `/api/v1/corpora/${slug}/stats/proximity`,
+      description: "Datos para scatter plot de proximidad textual: expresiones cercanas en el texto.",
+      params: [
+        { name: "range", type: "integer", required: false, description: "Ventana de proximidad (default 50, min 10, max 200)" },
+        { name: "limit", type: "integer", required: false, description: "Máximo de puntos (default 1000, min 100, max 5000)" },
+      ],
+    },
+    {
+      method: "GET",
+      path: `/api/v1/corpora/${slug}/stats/domain-matrix`,
+      description: "Matriz de co-ocurrencia dominio fuente × dominio meta para heatmap.",
+      params: [
+        { name: "minCount", type: "integer", required: false, description: "Mínimo de expresiones (default 1, min 1, max 100)" },
+        { name: "limit", type: "integer", required: false, description: "Máximo de dominios (default 50, min 10, max 100)" },
+      ],
+    },
   ];
 }
 

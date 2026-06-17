@@ -82,6 +82,27 @@ export async function fetchMetaphors(
   return { total: first.total, limit: maxItems, offset: 0, items: allItems };
 }
 
+// Nueva función para paginación real (para UI paginada)
+export async function fetchMetaphorsPaginated(
+  slug: string,
+  params: {
+    page: number;
+    pageSize: number;
+    dominio_fuente?: string;
+    dominio_meta?: string;
+    tipologia?: string;
+  }
+): Promise<ApiMetaphorsResponse> {
+  const offset = (params.page - 1) * params.pageSize;
+  return fetchMetaphorsPage(slug, {
+    limit: params.pageSize,
+    offset,
+    dominio_fuente: params.dominio_fuente,
+    dominio_meta: params.dominio_meta,
+    tipologia: params.tipologia,
+  });
+}
+
 export type ApiCorpusStats = {
   id?: string;
   slug: string;
@@ -317,10 +338,44 @@ export async function fetchExpressions(
     orden?: "asc" | "desc";
   } = {}
 ): Promise<ApiExpressionsResponse> {
+  // Si hay búsqueda, usar el endpoint de búsqueda full-text
+  if (params.search && params.search.trim()) {
+    const qs = new URLSearchParams();
+    qs.set("q", params.search.trim());
+    qs.set("limit", String(params.limit ?? 50));
+    qs.set("offset", String(params.offset ?? 0));
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/corpora/${slug}/expressions/search?${qs.toString()}`,
+        { cache: "no-store" }
+      );
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
+        }
+        throw new Error(`API error ${res.status}`);
+      }
+      
+      const raw = await res.json();
+      // El endpoint /search devuelve formato directo (sin 'data' wrapper)
+      return {
+        total: raw.total ?? 0,
+        limit: raw.limit ?? params.limit ?? 50,
+        offset: raw.offset ?? params.offset ?? 0,
+        items: raw.items ?? [],
+      };
+    } catch (error) {
+      console.error("fetchExpressions search error:", error);
+      return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
+    }
+  }
+
+  // Sin búsqueda, usar el endpoint general
   const qs = new URLSearchParams();
   qs.set("limit", String(params.limit ?? 50));
   qs.set("offset", String(params.offset ?? 0));
-  if (params.search) qs.set("search", params.search);
   if (params.dominio_fuente) qs.set("dominio_fuente", params.dominio_fuente);
   if (params.dominio_meta) qs.set("dominio_meta", params.dominio_meta);
   if (params.tipologia) qs.set("tipologia", params.tipologia);
@@ -333,7 +388,6 @@ export async function fetchExpressions(
     );
     
     if (!res.ok) {
-      // Return empty response if API endpoint doesn't exist yet
       if (res.status === 404) {
         return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
       }
@@ -341,7 +395,6 @@ export async function fetchExpressions(
     }
     
     const raw = await res.json();
-    // Handle both { data: {...} } and direct response formats
     const data = raw.data ?? raw;
     return {
       total: data.total ?? 0,
@@ -351,7 +404,6 @@ export async function fetchExpressions(
     };
   } catch (error) {
     console.error("fetchExpressions error:", error);
-    // Return empty response on error to prevent UI crash
     return { total: 0, limit: params.limit ?? 50, offset: params.offset ?? 0, items: [] };
   }
 }
@@ -400,5 +452,208 @@ export async function fetchNearbyExpressions(
     return items.filter((e: ApiExpression) => e.id !== expressionId);
   } catch {
     return [];
+  }
+}
+
+// ========== METAPHOR DETAIL ==========
+
+export type ApiMetaphorDetail = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  tipologia: string | null;
+  dominio_fuente: { id: string; nombre: string; tipo: string } | null;
+  dominio_meta: { id: string; nombre: string; tipo: string } | null;
+  estadisticas: {
+    total_expresiones: number;
+    correspondencias_ontologicas_distintas: number;
+    correspondencias_epistemicas_distintas: number;
+  };
+  correspondencias: {
+    ontologicas: { valor: string; frecuencia: number }[];
+    epistemicas: { valor: string; frecuencia: number }[];
+  };
+  expresiones_asociadas: {
+    id: string;
+    id_registro: string;
+    orden: number;
+    expresion_metaforica: string;
+    corresp_ontologicas: string | null;
+    corresp_epistemicas: string | null;
+    fuente_textual: {
+      id: string;
+      titulo_1: string;
+      autor: string | null;
+    };
+  }[];
+};
+
+export type ApiRelatedMetaphor = {
+  id: string;
+  nombre: string;
+  tipologia: string | null;
+  dominio_fuente: { id: string; nombre: string } | null;
+  dominio_meta: { id: string; nombre: string } | null;
+  total_expresiones: number;
+  tipo_relacion: "misma_fuente" | "misma_meta" | "similitud";
+};
+
+export async function fetchMetaphorById(
+  slug: string,
+  id: string
+): Promise<ApiMetaphorDetail | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/metaphors/${id}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const raw = await res.json();
+    return raw.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchMetaphorExpressions(
+  slug: string,
+  id: string,
+  params: {
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<ApiExpressionsResponse> {
+  const qs = new URLSearchParams();
+  qs.set("limit", String(params.limit ?? 20));
+  qs.set("offset", String(params.offset ?? 0));
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/metaphors/${id}/expressions?${qs.toString()}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) {
+      return { total: 0, limit: params.limit ?? 20, offset: params.offset ?? 0, items: [] };
+    }
+    const raw = await res.json();
+    const data = raw.data ?? raw;
+    return {
+      total: data.total ?? 0,
+      limit: data.limit ?? params.limit ?? 20,
+      offset: data.offset ?? params.offset ?? 0,
+      items: data.items ?? [],
+    };
+  } catch {
+    return { total: 0, limit: params.limit ?? 20, offset: params.offset ?? 0, items: [] };
+  }
+}
+
+export async function fetchRelatedMetaphors(
+  slug: string,
+  id: string
+): Promise<ApiRelatedMetaphor[]> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/metaphors/${id}/related`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    const raw = await res.json();
+    return raw.data?.items ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// ========== ESTADÍSTICAS AVANZADAS ==========
+
+export type DensityData = {
+  corpus_slug: string;
+  bucket_size: number;
+  total_expressions: number;
+  max_orden: number;
+  buckets: {
+    range: string;
+    start: number;
+    end: number;
+    count: number;
+    byTypology: Record<string, number>;
+  }[];
+};
+
+export type ProximityPoint = {
+  x: number;
+  y: number;
+  metaphorId: string;
+  metaphorName: string;
+  expression: string;
+  focus: string | null;
+  typology: string | null;
+  domainSource: string | null;
+  domainTarget: string | null;
+};
+
+export type ProximityData = {
+  corpus_slug: string;
+  range: number;
+  total_points: number;
+  data: ProximityPoint[];
+};
+
+export type DomainMatrixData = {
+  corpus_slug: string;
+  source_domains: string[];
+  target_domains: string[];
+  min_count: number;
+  matrix: Record<string, Record<string, { count: number; metaphorIds: string[] }>>;
+};
+
+export async function fetchDensityData(
+  slug: string,
+  bucketSize: number = 100
+): Promise<DensityData | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/stats/density?bucket=${bucketSize}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchProximityData(
+  slug: string,
+  range: number = 50,
+  limit: number = 1000
+): Promise<ProximityData | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/stats/proximity?range=${range}&limit=${limit}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchDomainMatrix(
+  slug: string,
+  minCount: number = 1,
+  limit: number = 50
+): Promise<DomainMatrixData | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/stats/domain-matrix?minCount=${minCount}&limit=${limit}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
   }
 }

@@ -2,7 +2,17 @@ import { notFound } from "next/navigation";
 
 import { StatisticsDashboard } from "@/components/statistics-dashboard";
 import { getCorpusBySlug } from "@/lib/corpora";
-import { fetchCorpusStats, fetchDomains, fetchMetaphors } from "@/lib/api";
+import {
+  fetchCorpusStats,
+  fetchDomains,
+  fetchMetaphors,
+  fetchDensityData,
+  fetchProximityData,
+  fetchDomainMatrix,
+  type DensityData,
+  type ProximityData,
+  type DomainMatrixData,
+} from "@/lib/api";
 
 type StatisticsPageProps = {
   params: Promise<{ slug: string }>;
@@ -22,13 +32,19 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
   let targetDomains: { nombre: string; frecuencia: number }[] = [];
   let allMetaphors: { nombre: string; total_expresiones: number; dominio_fuente?: { nombre: string } | null; dominio_meta?: { nombre: string } | null }[] = [];
   let typologyDistribution: { nombre: string; total: number }[] = [];
+  let densityData: DensityData | null = null;
+  let proximityData: ProximityData | null = null;
+  let domainMatrix: DomainMatrixData | null = null;
 
   try {
-    const [stats, domainsSource, domainsTarget, metaphors] = await Promise.all([
+    const [stats, domainsSource, domainsTarget, metaphors, density, proximity, matrix] = await Promise.all([
       fetchCorpusStats(slug),
       fetchDomains(slug, "fuente"),
       fetchDomains(slug, "meta"),
       fetchMetaphors(slug, { limit: 100 }),
+      fetchDensityData(slug, 100),
+      fetchProximityData(slug, 50, 1000),
+      fetchDomainMatrix(slug, 1, 30),
     ]);
 
     corpusStats = stats;
@@ -58,6 +74,10 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
     typologyDistribution = [...typoMap.entries()]
       .map(([nombre, total]) => ({ nombre, total }))
       .sort((a, b) => b.total - a.total);
+
+    densityData = density;
+    proximityData = proximity;
+    domainMatrix = matrix;
   } catch (error) {
     console.error("Error fetching statistics:", error);
   }
@@ -70,6 +90,9 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
       targetDomains={targetDomains}
       topMetaphors={allMetaphors}
       typologyDistribution={typologyDistribution}
+      densityData={densityData}
+      proximityData={proximityData}
+      domainMatrix={domainMatrix}
     />
   );
 }

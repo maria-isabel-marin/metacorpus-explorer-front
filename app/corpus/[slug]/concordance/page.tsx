@@ -7,7 +7,7 @@ import { fetchExpressions, fetchFilterOptions } from "@/lib/api";
 type ConcordancePageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ 
-    search?: string;
+    q?: string;
     tipologia?: string;
     page?: string;
     sort?: "orden" | "foco" | "contexto";
@@ -19,7 +19,7 @@ export default async function ConcordancePage({
   searchParams,
 }: ConcordancePageProps) {
   const { slug } = await params;
-  const { search, tipologia, page, sort } = await searchParams;
+  const { q, tipologia, page, sort } = await searchParams;
 
   const corpus = await getCorpusBySlug(slug);
   if (!corpus) {
@@ -36,7 +36,7 @@ export default async function ConcordancePage({
       fetchExpressions(slug, {
         limit: 50,
         offset,
-        search,
+        search: q,
         tipologia,
         orden: "asc",
       }),
@@ -55,7 +55,7 @@ export default async function ConcordancePage({
       total={expressionsData.total}
       currentPage={page ? parseInt(page, 10) : 1}
       pageSize={50}
-      searchQuery={search ?? ""}
+      searchQuery={q ?? ""}
       activeTypology={tipologia ?? "all"}
       filterOptions={filterOptions}
       sortBy={sort ?? "orden"}
