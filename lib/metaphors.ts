@@ -17,7 +17,7 @@ export type FilterOptions = {
   typologies: { name: string; count: number }[];
   sourceDomains: string[];
   targetDomains: string[];
-  grammaticalCategories: { name: string; count: number }[];
+  grammaticalCategories: { name: string; abbr?: string; count: number }[];
 };
 
 export function mapApiMetaphorToConceptualMetaphor(
@@ -36,27 +36,45 @@ export function mapApiMetaphorToConceptualMetaphor(
 }
 
 export function buildFilterOptions(
-  metaphors: ConceptualMetaphor[],
+  _metaphors: ConceptualMetaphor[],
   apiFilters: ApiFilterOptions
 ): FilterOptions {
-  const typologyCounts = new Map<string, number>();
-  for (const m of metaphors) {
-    typologyCounts.set(m.typology, (typologyCounts.get(m.typology) ?? 0) + 1);
-  }
-
-  const typologies = [...typologyCounts.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
+  // Las tipologías y sus counts vienen calculados desde fetchFilterOptions (500 metáforas)
+  const typologies = apiFilters.typologies.map((t) => ({
+    name: normalizeTypologyName(t.name),
+    count: t.count,
+  }));
 
   return {
     typologies,
     sourceDomains: apiFilters.sourceDomains,
     targetDomains: apiFilters.targetDomains,
     grammaticalCategories: apiFilters.grammaticalCategories.map((c) => ({
-      name: c.abreviatura,
-      count: 0,
+      name: c.nombre,
+      abbr: c.abreviatura,
+      count: c.count ?? 0,
     })),
   };
+}
+
+function normalizeTypologyName(raw: string): string {
+  const map: Record<string, string> = {
+    "ESTRUCTURAL": "Estructural",
+    "Estructural": "Estructural",
+    "estructural": "Estructural",
+    "ONTOLOGICA": "Ontologica",
+    "ONTOLÓGICA": "Ontologica",
+    "Ontologica": "Ontologica",
+    "Ontológica": "Ontologica",
+    "ontologica": "Ontologica",
+    "ORIENTACIONAL": "Orientacional",
+    "Orientacional": "Orientacional",
+    "orientacional": "Orientacional",
+    "OTRA": "Otra",
+    "Otra": "Otra",
+    "otra": "Otra",
+  };
+  return map[raw] ?? raw;
 }
 
 export function filterMetaphors(
@@ -69,8 +87,9 @@ export function filterMetaphors(
   }
 ): ConceptualMetaphor[] {
   return metaphors.filter(m => {
-    if (filters.typologies && filters.typologies.length > 0 && !filters.typologies.includes(m.typology)) {
-      return false;
+    if (filters.typologies && filters.typologies.length > 0) {
+      const normalized = normalizeTypologyName(m.typology);
+      if (!filters.typologies.includes(normalized)) return false;
     }
     if (filters.sourceDomain && filters.sourceDomain !== "all" && m.sourceDomain !== filters.sourceDomain) {
       return false;

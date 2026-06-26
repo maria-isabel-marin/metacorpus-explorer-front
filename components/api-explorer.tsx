@@ -53,7 +53,8 @@ function buildEndpoints(slug: string): Endpoint[] {
         { name: "offset", type: "integer", required: false, description: "Desplazamiento para paginación" },
         { name: "dominio_fuente", type: "string", required: false, description: "Filtro por nombre de dominio fuente" },
         { name: "dominio_meta", type: "string", required: false, description: "Filtro por nombre de dominio meta" },
-        { name: "tipologia", type: "string", required: false, description: "Filtro por tipología" },
+        { name: "tipologia", type: "string", required: false, description: "Filtro por tipología (usar OTRA para metáforas sin tipología)" },
+        { name: "cat_gramatical", type: "string", required: false, description: "Filtro por categoría gramatical del foco" },
       ],
     },
     {
@@ -83,6 +84,16 @@ function buildEndpoints(slug: string): Endpoint[] {
       method: "GET",
       path: `/api/v1/corpora/${slug}/domain-relations`,
       description: "Relaciones semánticas entre dominios (hiperonimia, hiponimia, meronimia, etc.).",
+    },
+    {
+      method: "GET",
+      path: `/api/v1/corpora/${slug}/stats/typologies`,
+      description: "Distribución de tipologías del corpus con conteo de expresiones por tipología.",
+    },
+    {
+      method: "GET",
+      path: `/api/v1/corpora/${slug}/grammatical-categories`,
+      description: "Categorías gramaticales presentes en el corpus con conteo de expresiones.",
     },
     {
       method: "GET",
@@ -157,7 +168,7 @@ type ApiExplorerProps = {
 export function ApiExplorer({ corpus }: ApiExplorerProps) {
   const { } = useLanguage();
   const endpoints = buildEndpoints(corpus.slug);
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
   return (
     <div className="api-page">

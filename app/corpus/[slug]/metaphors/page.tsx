@@ -12,14 +12,14 @@ import {
 
 type MetaphorsPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; cat_gramatical?: string; tipologia?: string }>;
 };
 
 const PAGE_SIZE = 50;
 
 export default async function MetaphorsPage({ params, searchParams }: MetaphorsPageProps) {
   const { slug } = await params;
-  const { page } = await searchParams;
+  const { page, cat_gramatical, tipologia } = await searchParams;
   const currentPage = page ? parseInt(page, 10) : 1;
 
   const corpus = await getCorpusBySlug(slug);
@@ -34,14 +34,15 @@ export default async function MetaphorsPage({ params, searchParams }: MetaphorsP
 
   try {
     const [apiData, apiFilters] = await Promise.all([
-      fetchMetaphorsPaginated(slug, { page: currentPage, pageSize: PAGE_SIZE }),
+      fetchMetaphorsPaginated(slug, { page: currentPage, pageSize: PAGE_SIZE, cat_gramatical, tipologia }),
       fetchFilterOptions(slug),
     ]);
 
     metaphors = apiData.items.map(mapApiMetaphorToConceptualMetaphor);
     total = apiData.total;
     filterOptions = buildFilterOptions(metaphors, apiFilters);
-  } catch {
+  } catch (error) {
+    console.error("[MetaphorsPage] Error fetching metaphors:", error);
     metaphors = [];
     total = 0;
     filterOptions = { typologies: [], sourceDomains: [], targetDomains: [], grammaticalCategories: [] };
@@ -56,6 +57,8 @@ export default async function MetaphorsPage({ params, searchParams }: MetaphorsP
       currentPage={currentPage}
       totalPages={Math.ceil(total / PAGE_SIZE)}
       total={total}
+      activeTypology={tipologia ?? ""}
+      activeCatGramatical={cat_gramatical ?? ""}
     />
   );
 }

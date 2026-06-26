@@ -87,20 +87,23 @@ export function MetaphorFilters({
       <div className="filter-section">
         <h3 className="filter-section-title">{t.filters.grammaticalCategory}</h3>
         <div className="filter-options">
-          {filters.grammaticalCategories.map((category) => (
-            <label key={category.name} className="filter-checkbox-label">
-              <input
-                type="checkbox"
-                className="filter-checkbox"
-                checked={selectedGrammaticalCategory === category.name}
-                onChange={() => onGrammaticalCategoryChange(
-                  selectedGrammaticalCategory === category.name ? "" : category.name
-                )}
-              />
-              <span className="filter-checkbox-text">{category.name}</span>
-              <span className="filter-count">{category.count}</span>
-            </label>
-          ))}
+          {filters.grammaticalCategories.length === 0 ? (
+            <p className="filter-empty">—</p>
+          ) : (
+            filters.grammaticalCategories.map((category) => (
+              <label key={category.name} className="filter-checkbox-label">
+                <input
+                  type="checkbox"
+                  className="filter-checkbox"
+                  checked={selectedGrammaticalCategory === category.name}
+                  onChange={() => onGrammaticalCategoryChange(
+                    selectedGrammaticalCategory === category.name ? "" : category.name
+                  )}
+                />
+                <span className="filter-checkbox-text">{category.name}</span>
+              </label>
+            ))
+          )}
         </div>
       </div>
     </aside>

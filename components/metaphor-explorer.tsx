@@ -25,6 +25,8 @@ type MetaphorExplorerProps = {
   currentPage: number;
   totalPages: number;
   total: number;
+  activeTypology?: string;
+  activeCatGramatical?: string;
 };
 
 export function MetaphorExplorer({
@@ -35,22 +37,32 @@ export function MetaphorExplorer({
   currentPage,
   totalPages,
   total,
+  activeTypology = "",
+  activeCatGramatical = "",
 }: MetaphorExplorerProps) {
   const { t } = useLanguage();
   const router = useRouter();
-  const [selectedTypologies, setSelectedTypologies] = useState<MetaphorTypology[]>([]);
+  const [selectedTypology, setSelectedTypology] = useState<string>(activeTypology);
   const [selectedSourceDomain, setSelectedSourceDomain] = useState<string>("all");
   const [selectedTargetDomain, setSelectedTargetDomain] = useState<string>("all");
-  const [selectedGrammaticalCategory, setSelectedGrammaticalCategory] = useState<string>("");
+  const [selectedGrammaticalCategory, setSelectedGrammaticalCategory] = useState<string>(activeCatGramatical);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
+  const navigate = useCallback((overrides: Record<string, string>) => {
+    const params = new URLSearchParams();
+    params.set("page", "1");
+    const typ = overrides.tipologia ?? selectedTypology;
+    const cat = overrides.cat_gramatical ?? selectedGrammaticalCategory;
+    if (typ) params.set("tipologia", typ);
+    if (cat) params.set("cat_gramatical", cat);
+    router.push(`/corpus/${corpusSlug}/metaphors?${params.toString()}`);
+  }, [router, corpusSlug, selectedTypology, selectedGrammaticalCategory]);
+
   const handleTypologyChange = useCallback((typology: MetaphorTypology) => {
-    setSelectedTypologies((prev) =>
-      prev.includes(typology)
-        ? prev.filter((typ) => typ !== typology)
-        : [...prev, typology]
-    );
-  }, []);
+    const next = selectedTypology === typology ? "" : typology;
+    setSelectedTypology(next);
+    navigate({ tipologia: next });
+  }, [selectedTypology, navigate]);
 
   const handleSourceDomainChange = useCallback((domain: string) => {
     setSelectedSourceDomain(domain);
@@ -61,23 +73,17 @@ export function MetaphorExplorer({
   }, []);
 
   const handleGrammaticalCategoryChange = useCallback((category: string) => {
-    setSelectedGrammaticalCategory(category);
-  }, []);
+    const next = selectedGrammaticalCategory === category ? "" : category;
+    setSelectedGrammaticalCategory(next);
+    navigate({ cat_gramatical: next });
+  }, [selectedGrammaticalCategory, navigate]);
 
   const filteredMetaphors = useMemo(() => {
     return filterMetaphors(metaphors, {
-      typologies: selectedTypologies.length > 0 ? selectedTypologies : undefined,
       sourceDomain: selectedSourceDomain,
       targetDomain: selectedTargetDomain,
-      grammaticalCategory: selectedGrammaticalCategory || undefined,
     });
-  }, [
-    metaphors,
-    selectedTypologies,
-    selectedSourceDomain,
-    selectedTargetDomain,
-    selectedGrammaticalCategory,
-  ]);
+  }, [metaphors, selectedSourceDomain, selectedTargetDomain]);
 
   const handleDownloadCSV = useCallback(() => {
     const csv = downloadMetaphorsAsCSV(filteredMetaphors);
@@ -92,7 +98,11 @@ export function MetaphorExplorer({
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      router.push(`/corpus/${corpusSlug}/metaphors?page=${page}`);
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      if (selectedTypology) params.set("tipologia", selectedTypology);
+      if (selectedGrammaticalCategory) params.set("cat_gramatical", selectedGrammaticalCategory);
+      router.push(`/corpus/${corpusSlug}/metaphors?${params.toString()}`);
     }
   };
 
@@ -147,7 +157,7 @@ export function MetaphorExplorer({
       </header>
 
       {/* Filter Status */}
-      {(selectedTypologies.length > 0 ||
+      {(selectedTypology !== "" ||
         selectedSourceDomain !== "all" ||
         selectedTargetDomain !== "all" ||
         selectedGrammaticalCategory !== "") && (
@@ -158,10 +168,11 @@ export function MetaphorExplorer({
           <button
             className="clear-filters-btn"
             onClick={() => {
-              setSelectedTypologies([]);
+              setSelectedTypology("");
               setSelectedSourceDomain("all");
               setSelectedTargetDomain("all");
               setSelectedGrammaticalCategory("");
+              router.push(`/corpus/${corpusSlug}/metaphors?page=1`);
             }}
           >
             {t.explorer.clearFilters}
@@ -173,7 +184,7 @@ export function MetaphorExplorer({
       <div className="metaphor-explorer-content">
         <MetaphorFilters
           filters={filters}
-          selectedTypologies={selectedTypologies}
+          selectedTypologies={selectedTypology ? [selectedTypology] : []}
           selectedSourceDomain={selectedSourceDomain}
           selectedTargetDomain={selectedTargetDomain}
           selectedGrammaticalCategory={selectedGrammaticalCategory}

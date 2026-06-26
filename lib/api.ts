@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export type ApiMetaphor = {
   id: string;
@@ -21,10 +21,10 @@ type RawApiResponse = {
 };
 
 export type ApiFilterOptions = {
-  typologies: string[];
+  typologies: { name: string; count: number }[];
   sourceDomains: string[];
   targetDomains: string[];
-  grammaticalCategories: { nombre: string; abreviatura: string }[];
+  grammaticalCategories: { nombre: string; abreviatura: string; count?: number }[];
 };
 
 async function apiFetch<T>(path: string): Promise<T> {
@@ -43,6 +43,7 @@ async function fetchMetaphorsPage(
     dominio_fuente?: string;
     dominio_meta?: string;
     tipologia?: string;
+    cat_gramatical?: string;
   }
 ): Promise<ApiMetaphorsResponse> {
   const qs = new URLSearchParams();
@@ -51,6 +52,7 @@ async function fetchMetaphorsPage(
   if (params.dominio_fuente) qs.set("dominio_fuente", params.dominio_fuente);
   if (params.dominio_meta) qs.set("dominio_meta", params.dominio_meta);
   if (params.tipologia) qs.set("tipologia", params.tipologia);
+  if (params.cat_gramatical) qs.set("cat_gramatical", params.cat_gramatical);
 
   const raw = await apiFetch<RawApiResponse>(
     `/api/v1/corpora/${slug}/metaphors?${qs.toString()}`
@@ -91,6 +93,7 @@ export async function fetchMetaphorsPaginated(
     dominio_fuente?: string;
     dominio_meta?: string;
     tipologia?: string;
+    cat_gramatical?: string;
   }
 ): Promise<ApiMetaphorsResponse> {
   const offset = (params.page - 1) * params.pageSize;
@@ -100,6 +103,7 @@ export async function fetchMetaphorsPaginated(
     dominio_fuente: params.dominio_fuente,
     dominio_meta: params.dominio_meta,
     tipologia: params.tipologia,
+    cat_gramatical: params.cat_gramatical,
   });
 }
 
@@ -256,23 +260,39 @@ export type TreeNode = {
 export async function fetchFilterOptions(
   slug: string
 ): Promise<ApiFilterOptions> {
-  const data = await fetchMetaphors(slug, { limit: 500 });
+  const [metaphorsData, typologiesRaw, gramCatsRaw] = await Promise.all([
+    fetchMetaphors(slug, { limit: 500 }),
+    apiFetch<{ data: { tipologia: string; count: number }[] }>(
+      `/api/v1/corpora/${slug}/stats/typologies`
+    ).catch(() => ({ data: [] })),
+    apiFetch<{ data: { nombre: string; abreviatura: string; count: number }[] }>(
+      `/api/v1/corpora/${slug}/grammatical-categories`
+    ).catch(() => ({ data: [] })),
+  ]);
 
-  const typologySet = new Set<string>();
   const sourceDomainSet = new Set<string>();
   const targetDomainSet = new Set<string>();
 
-  for (const m of data.items) {
-    if (m.tipologia) typologySet.add(m.tipologia);
+  for (const m of metaphorsData.items) {
     if (m.dominio_fuente) sourceDomainSet.add(m.dominio_fuente.nombre);
     if (m.dominio_meta) targetDomainSet.add(m.dominio_meta.nombre);
   }
 
+  const typologies = (typologiesRaw.data ?? []).map((t) => ({
+    name: t.tipologia,
+    count: t.count,
+  }));
+
+  const grammaticalCategories = (gramCatsRaw.data ?? []).map((c) => ({
+    nombre: c.nombre,
+    abreviatura: c.abreviatura,
+  }));
+
   return {
-    typologies: [...typologySet].sort(),
+    typologies,
     sourceDomains: [...sourceDomainSet].sort(),
     targetDomains: [...targetDomainSet].sort(),
-    grammaticalCategories: [],
+    grammaticalCategories,
   };
 }
 

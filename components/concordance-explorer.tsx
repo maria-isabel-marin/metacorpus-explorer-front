@@ -141,9 +141,9 @@ export function ConcordanceExplorer({
               className="typology-select"
             >
               <option value="all">{t.concordance?.allTypologies || "Todas las tipologías"}</option>
-              {filterOptions.typologies.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {filterOptions.typologies.map((typ) => (
+                <option key={typ.name} value={typ.name}>
+                  {typ.name}
                 </option>
               ))}
             </select>

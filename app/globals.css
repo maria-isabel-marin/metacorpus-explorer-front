@@ -1182,10 +1182,98 @@ textarea {
   width: 100%;
 }
 
+/* Hamburger button */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.hamburger-bar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text-soft);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+/* Mobile dropdown menu */
+.nav-mobile-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.nav-mobile-link {
+  display: block;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.nav-mobile-link:hover,
+.nav-mobile-link.nav-link-active {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.nav-mobile-corpus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 12px;
+}
+
+.nav-mobile-corpus-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-mobile-change {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-mobile-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 16px 8px;
+}
+
 /* Responsive Navigation */
 @media (max-width: 1100px) {
   .nav-menu {
     display: none;
+  }
+
+  .nav-hamburger {
+    display: flex;
   }
 
   .nav-container {
@@ -1193,15 +1281,20 @@ textarea {
   }
 }
 
-@media (max-width: 600px) {
-  .nav-container {
-    flex-wrap: wrap;
-    gap: 12px;
+@media (max-width: 768px) {
+  .nav-corpus-card {
+    display: none;
   }
 
-  .nav-corpus-card {
-    width: 100%;
-    justify-content: space-between;
+  .nav-right-group {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .nav-container {
+    gap: 8px;
+    padding: 10px 12px;
   }
 
   .nav-corpus-name {

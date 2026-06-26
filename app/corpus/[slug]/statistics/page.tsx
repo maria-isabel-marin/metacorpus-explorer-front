@@ -9,6 +9,7 @@ import {
   fetchDensityData,
   fetchProximityData,
   fetchDomainMatrix,
+  fetchFilterOptions,
   type DensityData,
   type ProximityData,
   type DomainMatrixData,
@@ -37,7 +38,7 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
   let domainMatrix: DomainMatrixData | null = null;
 
   try {
-    const [stats, domainsSource, domainsTarget, metaphors, density, proximity, matrix] = await Promise.all([
+    const [stats, domainsSource, domainsTarget, metaphors, density, proximity, matrix, filterOpts] = await Promise.all([
       fetchCorpusStats(slug),
       fetchDomains(slug, "fuente"),
       fetchDomains(slug, "meta"),
@@ -45,6 +46,7 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
       fetchDensityData(slug, 100),
       fetchProximityData(slug, 50, 1000),
       fetchDomainMatrix(slug, 1, 30),
+      fetchFilterOptions(slug),
     ]);
 
     corpusStats = stats;
@@ -66,14 +68,10 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
         dominio_meta: m.dominio_meta,
       }));
 
-    const typoMap = new Map<string, number>();
-    for (const m of metaphors.items) {
-      const key = m.tipologia ?? "Sin tipología";
-      typoMap.set(key, (typoMap.get(key) ?? 0) + m.total_expresiones);
-    }
-    typologyDistribution = [...typoMap.entries()]
-      .map(([nombre, total]) => ({ nombre, total }))
-      .sort((a, b) => b.total - a.total);
+    typologyDistribution = filterOpts.typologies.map((t) => ({
+      nombre: t.name,
+      total: t.count,
+    }));
 
     densityData = density;
     proximityData = proximity;

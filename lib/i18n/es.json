@@ -1,15 +1,15 @@
 {
   "landing": {
     "title": "Meta<span>Corpus</span> Explorer",
-    "description": "Plataforma multi-corpus para la exploración, búsqueda y visualización de metáforas conceptuales anotadas con MIPVU. Selecciona un corpus para comenzar tu sesión.",
+    "description": "Plataforma para la exploración, búsqueda y visualización de corpus de metáforas conceptuales. Selecciona un corpus para comenzar tu sesión.",
     "expressions": "Expresiones",
     "metaphors": "Metáforas",
     "sourceDomains": "Dom. fuente",
     "targetDomains": "Dom. meta",
     "published": "Publicado",
     "explore": "Explorar",
-    "footerMipvu": "MIPVU · Metaphor Identification Procedure Vrije Universiteit",
-    "footerOpen": "Abierto · Citable · Interoperable · Reutilizable"
+    "footerMipvu": "Principios FAIR",
+    "footerOpen": "Buscables · Accesibles · Interoperables · Reutilizables"
   },
   "activeCorpusBar": {
     "exploring": "Explorando",
