@@ -86,7 +86,7 @@
     "metaphors": "Metaphors",
     "domains": "Domains",
     "concordance": "Concordance",
-    "map": "Map",
+    "map": "Visualization",
     "stats": "Statistics",
     "about": "About",
     "api": "API",
@@ -131,7 +131,14 @@
     "statistics": "STATISTICS",
     "domains": "Domains",
     "metaphors": "Metaphors",
-    "visibleEdges": "Visible edges"
+    "visibleEdges": "Visible edges",
+    "viewMap": "Radial map",
+    "viewSankey": "Sankey",
+    "sankeyTitle": "Metaphorical flow",
+    "sankeyDescription": "Flow from source domain to target domain. Band thickness is proportional to the number of metaphorical expressions.",
+    "sankeySource": "SOURCE DOMAIN",
+    "sankeyTarget": "TARGET DOMAIN",
+    "sankeyExpressions": "expressions"
   },
   "domainDetail": {
     "expressions": "EXPRESSIONS",

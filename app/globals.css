@@ -2156,6 +2156,245 @@ textarea {
   margin: 0;
 }
 
+/* Top-level view tabs (Map / Sankey) */
+.map-top-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.map-top-tab {
+  padding: 8px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: var(--text-soft);
+  transition: color 0.2s, border-color 0.2s;
+  margin-bottom: -9px;
+}
+
+.map-top-tab:hover {
+  color: var(--text);
+}
+
+.map-top-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Sankey chart */
+.sankey-wrapper {
+  padding: 0 0 24px;
+}
+
+.sankey-header {
+  margin-bottom: 12px;
+}
+
+.sankey-description {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.sankey-column-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.sankey-col-label {
+  width: 160px;
+}
+
+.sankey-col-source {
+  text-align: left;
+}
+
+.sankey-col-target {
+  text-align: right;
+}
+
+.sankey-svg-container {
+  width: 100%;
+}
+
+.sankey-svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.sankey-link {
+  transition: opacity 0.2s;
+  cursor: default;
+}
+
+.sankey-node-group {
+  cursor: default;
+}
+
+.sankey-label {
+  font-family: var(--font-mono, "Courier New", monospace);
+  pointer-events: none;
+}
+
+.sankey-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.sankey-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sankey-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.sankey-empty {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+.sankey-filter-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.sankey-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-soft);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sankey-filter-tab:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.sankey-filter-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.sankey-filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sankey-other-note {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.sankey-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-width: 200px;
+  max-width: 280px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  pointer-events: none;
+}
+
+.sankey-tooltip-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.sankey-tooltip-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.sankey-tooltip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sankey-tooltip-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+
+.sankey-tooltip-bar {
+  display: inline-block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--primary, #3b82f6);
+  flex-shrink: 0;
+}
+
+.sankey-tooltip-name {
+  flex: 1;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sankey-tooltip-count {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
 /* Controls */
 .map-controls {
   display: flex;

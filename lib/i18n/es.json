@@ -86,7 +86,7 @@
     "metaphors": "Metáforas",
     "domains": "Dominios",
     "concordance": "Concordancia",
-    "map": "Mapa",
+    "map": "Visualización",
     "stats": "Estadísticas",
     "about": "Acerca",
     "api": "API",
@@ -131,7 +131,14 @@
     "statistics": "ESTADÍSTICAS",
     "domains": "Dominios",
     "metaphors": "Metáforas",
-    "visibleEdges": "Aristas visibles"
+    "visibleEdges": "Aristas visibles",
+    "viewMap": "Mapa radial",
+    "viewSankey": "Sankey",
+    "sankeyTitle": "Flujo metafórico",
+    "sankeyDescription": "Flujo de dominio fuente a dominio meta. El grosor de cada banda es proporcional al número de expresiones metáforicas.",
+    "sankeySource": "DOMINIO FUENTE",
+    "sankeyTarget": "DOMINIO META",
+    "sankeyExpressions": "expresiones"
   },
   "domainDetail": {
     "expressions": "EXPRESIONES",
