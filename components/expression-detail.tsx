@@ -11,6 +11,7 @@ type ExpressionDetailProps = {
   corpus: CorpusSummary;
   expression: ApiExpression;
   nearbyExpressions: ApiExpression[];
+  sourceTotal: number;
 };
 
 const TYPOLOGY_COLORS: Record<string, string> = {
@@ -24,6 +25,7 @@ export function ExpressionDetail({
   corpus,
   expression,
   nearbyExpressions,
+  sourceTotal,
 }: ExpressionDetailProps) {
   const { t } = useLanguage();
   // Tipologia can be on expression directly or nested in metafora_conceptual
@@ -160,9 +162,13 @@ ER  - `;
     );
   };
 
-  // Previous/next navigation
-  const prevExpression = nearbyExpressions.find((e) => e.orden < expression.orden);
-  const nextExpression = nearbyExpressions.find((e) => e.orden > expression.orden);
+  // Previous/next navigation — pick the immediately adjacent by orden
+  const prevExpression = nearbyExpressions
+    .filter((e) => e.orden < expression.orden)
+    .sort((a, b) => b.orden - a.orden)[0];
+  const nextExpression = nearbyExpressions
+    .filter((e) => e.orden > expression.orden)
+    .sort((a, b) => a.orden - b.orden)[0];
 
   return (
     <main className="expression-detail-shell">
@@ -226,18 +232,54 @@ ER  - `;
             </div>
 
             <div className="mipvu-fields">
-              {/* Row 1 */}
+              {/* Row 1 - Orden (full width for position bar) */}
               <div className="mipvu-row">
-                <div className="mipvu-field">
+                <div className="mipvu-field mipvu-field--order full">
                   <label>{t.concordance?.fieldOrder || "Orden"}</label>
-                  <span className="field-value">{expression.orden}</span>
+                  <div className="order-position">
+                    <span className="order-value">
+                      {expression.orden}
+                      {sourceTotal > 0 && (
+                        <span className="order-total"> / {sourceTotal}</span>
+                      )}
+                    </span>
+                    {sourceTotal > 0 && (
+                      <div className="order-bar-container">
+                        <div className="order-bar-wrapper" aria-label={t.concordance?.orderPositionLabel || "Posición relativa en el documento fuente"}>
+                          <div
+                            className="order-bar-fill"
+                            style={{ width: `${Math.min((expression.orden / sourceTotal) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <div className="order-bar-labels">
+                          <span>{t.concordance?.orderStart || "inicio"}</span>
+                          <span>{t.concordance?.orderPositionLabel || "posición relativa en el documento fuente"}</span>
+                          <span>{t.concordance?.orderEnd || "fin"}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="mipvu-field wide">
+              </div>
+
+              {/* Row 2 - Fuente textual */}
+              <div className="mipvu-row">
+                <div className="mipvu-field full">
                   <label>{t.concordance?.fieldSource || "Fuente textual"}</label>
                   <span className="field-value">
                     {expression.fuente_textual.titulo_1}
-                    {expression.fuente_textual.titulo_2 && ` - ${expression.fuente_textual.titulo_2}`}
+                    {expression.fuente_textual.titulo_2 && ` \u2014 ${expression.fuente_textual.titulo_2}`}
                   </span>
+                  {(expression.fuente_textual.titulo_3 || expression.pagina) && (
+                    <span className="source-subtitle">
+                      {[
+                        expression.fuente_textual.titulo_3,
+                        expression.pagina != null ? `p.\u00a0${expression.pagina}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" \u00b7 ")}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -249,11 +291,31 @@ ER  - `;
                 </div>
               </div>
 
-              {/* Row 3 - Focus only */}
+              {/* Row 3 - Focus + lema + categoría gramatical */}
               <div className="mipvu-row">
                 <div className="mipvu-field full">
                   <label>{t.concordance?.fieldFocus || "Foco"}</label>
-                  <span className="field-value highlighted-value">{expression.foco || <span className="empty-value" title="Foco no especificado">—</span>}</span>
+                  <div className="focus-inline">
+                    {expression.foco ? (
+                      <span className="focus-inline-value">{expression.foco}</span>
+                    ) : (
+                      <span className="empty-value" title="Foco no especificado">—</span>
+                    )}
+                    {expression.foco_lematizado && expression.foco_lematizado !== expression.foco && (
+                      <span className="focus-lema">
+                        <span className="focus-sep">·</span>
+                        {t.concordance?.lema || "lema"}: {expression.foco_lematizado}
+                      </span>
+                    )}
+                    {(expression.categoria_gramatical || expression.cat_gramatical)?.nombre && (
+                      <span className="focus-sep">·</span>
+                    )}
+                    {(expression.categoria_gramatical || expression.cat_gramatical)?.nombre ? (
+                      <span className="tag category-tag">
+                        {(expression.categoria_gramatical || expression.cat_gramatical)?.nombre?.toUpperCase()}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -322,9 +384,9 @@ ER  - `;
                 </div>
               </div>
 
-              {/* Row 7 - Typology */}
+              {/* Row 7 - Typology only */}
               <div className="mipvu-row">
-                <div className="mipvu-field">
+                <div className="mipvu-field full">
                   <label>{t.concordance?.fieldTypology || "Tipología"}</label>
                   <span className="field-value">
                     {tipologia ? (
@@ -340,19 +402,6 @@ ER  - `;
                       </span>
                     ) : (
                       <span className="empty-value" title="Tipología no especificada">—</span>
-                    )}
-                  </span>
-                </div>
-                <div className="mipvu-field">
-                  <label>{t.concordance?.fieldCategory || "Categoría gramatical"}</label>
-                  <span className="field-value">
-                    {(expression.categoria_gramatical || expression.cat_gramatical)?.nombre ? (
-                      <span className="tag category-tag">
-                        {(expression.categoria_gramatical || expression.cat_gramatical)?.abreviatura || 
-                         (expression.categoria_gramatical || expression.cat_gramatical)?.nombre}
-                      </span>
-                    ) : (
-                      <span className="empty-value" title="Categoría gramatical no especificada">—</span>
                     )}
                   </span>
                 </div>

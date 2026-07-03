@@ -445,7 +445,31 @@ export async function fetchExpressionById(
   }
 }
 
-// Fetch expressions near a specific order (±5)
+// Fetch total expression count for a given fuente_textual (for position bar)
+export async function fetchSourceExpressionCount(
+  slug: string,
+  sourceId: string
+): Promise<number> {
+  const params = new URLSearchParams();
+  params.set("fuente_textual_id", sourceId);
+  params.set("limit", "1");
+  params.set("offset", "0");
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/corpora/${slug}/expressions?${params.toString()}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return 0;
+    const raw = await res.json();
+    const data = raw.data ?? raw;
+    return data.total ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Fetch expressions near a specific order (±range) using the dedicated nearby endpoint
 export async function fetchNearbyExpressions(
   slug: string,
   expressionId: string,
@@ -453,23 +477,14 @@ export async function fetchNearbyExpressions(
   orden: number,
   range: number = 5
 ): Promise<ApiExpression[]> {
-  const params = new URLSearchParams();
-  params.set("fuente_textual_id", sourceId);
-  params.set("orden_min", String(Math.max(0, orden - range)));
-  params.set("orden_max", String(orden + range));
-  params.set("limit", String(range * 2 + 1));
-
   try {
     const res = await fetch(
-      `${API_BASE}/api/v1/corpora/${slug}/expressions?${params.toString()}`,
+      `${API_BASE}/api/v1/corpora/${slug}/expressions/${expressionId}/nearby?range=${range}`,
       { cache: "no-store" }
     );
     if (!res.ok) return [];
     const raw = await res.json();
-    const data = raw.data ?? raw;
-    const items = data.items ?? [];
-    // Exclude the current expression
-    return items.filter((e: ApiExpression) => e.id !== expressionId);
+    return (raw.items ?? []) as ApiExpression[];
   } catch {
     return [];
   }

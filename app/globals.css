@@ -3221,6 +3221,7 @@ textarea {
 
 .mipvu-field {
   flex: 1;
+  min-width: 0;
   padding: 14px 20px;
   border-right: 1px solid var(--border-subtle);
 }
@@ -3252,6 +3253,37 @@ textarea {
   font-size: 0.9rem;
   color: var(--text);
   line-height: 1.4;
+}
+
+.focus-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.focus-inline-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.focus-lema {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.focus-sep {
+  color: var(--text-faint);
+  margin: 0 2px;
+}
+
+.source-subtitle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  margin-top: 3px;
+  font-style: italic;
 }
 
 .field-value.expression-value {
@@ -3329,6 +3361,80 @@ textarea {
 /* Compact display for fields without data */
 .mipvu-field:has(.empty-value) {
   opacity: 0.8;
+}
+
+/* Order position bar widget */
+.mipvu-field--order {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-position {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.order-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary);
+  font-family: "Courier New", Courier, monospace;
+}
+
+.order-total {
+  font-weight: 400;
+  color: var(--text-soft);
+}
+
+.order-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.order-bar-wrapper {
+  position: relative;
+  height: 16px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.order-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--primary);
+  opacity: 0.7;
+  border-radius: 1px;
+  min-width: 3px;
+}
+
+.order-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.6rem;
+  color: var(--text-faint);
+  letter-spacing: 0.03em;
+  width: 100%;
+}
+
+.order-bar-labels span:nth-child(2) {
+  text-align: center;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
 }
 
 /* Data completeness indicator */

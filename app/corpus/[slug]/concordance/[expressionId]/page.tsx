@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ExpressionDetail } from "@/components/expression-detail";
 import { getCorpusBySlug } from "@/lib/corpora";
-import { fetchExpressionById, fetchNearbyExpressions } from "@/lib/api";
+import { fetchExpressionById, fetchNearbyExpressions, fetchSourceExpressionCount } from "@/lib/api";
 
 type ExpressionDetailPageProps = {
   params: Promise<{ slug: string; expressionId: string }>;
@@ -23,20 +23,24 @@ export default async function ExpressionDetailPage({
     return notFound();
   }
 
-  // Fetch nearby expressions (±5)
-  const nearbyExpressions = await fetchNearbyExpressions(
-    slug,
-    expressionId,
-    expression.fuente_textual.id,
-    expression.orden,
-    5
-  );
+  // Fetch nearby expressions (±5) and total count in parallel
+  const [nearbyExpressions, sourceTotal] = await Promise.all([
+    fetchNearbyExpressions(
+      slug,
+      expressionId,
+      expression.fuente_textual.id,
+      expression.orden,
+      5
+    ),
+    fetchSourceExpressionCount(slug, expression.fuente_textual.id),
+  ]);
 
   return (
     <ExpressionDetail
       corpus={corpus}
       expression={expression}
       nearbyExpressions={nearbyExpressions}
+      sourceTotal={sourceTotal}
     />
   );
 }

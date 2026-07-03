@@ -189,7 +189,11 @@
     "sortBy": "Sort by",
     "sortOrder": "ORDER",
     "sortFocus": "FOCUS",
-    "sortContext": "right ctx."
+    "sortContext": "right ctx.",
+    "orderPositionLabel": "relative position in source document",
+    "orderStart": "start",
+    "orderEnd": "end",
+    "lema": "lemma"
   },
   "language": {
     "label": "Language",
