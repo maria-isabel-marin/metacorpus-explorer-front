@@ -7,6 +7,7 @@ import type { CorpusSummary } from "@/lib/corpora";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { SankeyChart } from "./sankey-chart";
+import { NetworkGraph } from "./network-graph";
 
 type MetaphorMapProps = {
   corpus: CorpusSummary;
@@ -19,7 +20,7 @@ type MetaphorMapProps = {
   activeTypology: string;
 };
 
-type TopView = "map" | "sankey";
+type TopView = "map" | "sankey" | "graph";
 
 const typologyColors: Record<string, string> = {
   "ESTRUCTURAL": "#64748b", // slate
@@ -222,9 +223,16 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
         >
           {t.map?.viewSankey || "Sankey"}
         </button>
+        <button
+          className={`map-top-tab ${topView === "graph" ? "active" : ""}`}
+          onClick={() => setTopView("graph")}
+        >
+          {t.map?.viewGraph || "Grafo dirigido"}
+        </button>
       </div>
 
       {topView === "sankey" && <SankeyChart metaphors={metaphors} />}
+      {topView === "graph" && <NetworkGraph metaphors={metaphors} />}
 
       {topView === "map" && <div className="map-controls">
         <div className="map-filter-tabs">

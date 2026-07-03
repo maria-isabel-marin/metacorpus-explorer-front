@@ -134,6 +134,7 @@
     "visibleEdges": "Aristas visibles",
     "viewMap": "Mapa radial",
     "viewSankey": "Sankey",
+    "viewGraph": "Grafo dirigido",
     "sankeyTitle": "Flujo metafórico",
     "sankeyDescription": "Flujo de dominio fuente a dominio meta. El grosor de cada banda es proporcional al número de expresiones metáforicas.",
     "sankeySource": "DOMINIO FUENTE",

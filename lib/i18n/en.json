@@ -134,6 +134,7 @@
     "visibleEdges": "Visible edges",
     "viewMap": "Radial map",
     "viewSankey": "Sankey",
+    "viewGraph": "Directed graph",
     "sankeyTitle": "Metaphorical flow",
     "sankeyDescription": "Flow from source domain to target domain. Band thickness is proportional to the number of metaphorical expressions.",
     "sankeySource": "SOURCE DOMAIN",
