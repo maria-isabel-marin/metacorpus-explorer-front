@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import type { CorpusSummary } from "@/lib/corpora";
@@ -33,6 +34,7 @@ export function DomainDetail({
   targetMetaphors,
 }: DomainDetailProps) {
   const { t } = useLanguage();
+  const [egoExpanded, setEgoExpanded] = useState(false);
 
   const getMacroColor = (category: string) => {
     const norm = category.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
@@ -87,6 +89,13 @@ export function DomainDetail({
     return { ...n, x: CX + RADIUS * Math.cos(angle), y: CY + RADIUS * Math.sin(angle) };
   });
 
+  // Expanded version uses larger dimensions
+  const EX = 350, EY = 350, ERADIUS = 260;
+  const egoSatellitesExpanded: EgoNode[] = uniqueNodes.map((n, i) => {
+    const angle = (i / uniqueNodes.length) * 2 * Math.PI - Math.PI / 2;
+    return { ...n, x: EX + ERADIUS * Math.cos(angle), y: EY + ERADIUS * Math.sin(angle) };
+  });
+
   return (
     <main className="domain-detail-shell">
       {/* Breadcrumb */}
@@ -112,7 +121,7 @@ export function DomainDetail({
       {/* Domain Header */}
       <header className="domain-header">
         <p className="domain-type-label">
-          {domain.type === "fuente" ? "DOMINIO FUENTE" : "DOMINIO META"}
+          {domain.type === "fuente" ? (t.domainDetail?.domainSource || "DOMINIO FUENTE") : (t.domainDetail?.domainTarget || "DOMINIO META")}
         </p>
         <h1 className="domain-title">{domain.name}</h1>
         <div className="domain-badges">
@@ -228,7 +237,12 @@ export function DomainDetail({
         <aside className="domain-right">
           <section className="domain-section ego-graph-section">
             <h2>{t.domainDetail?.egoGraph || "Grafo ego-céntrico"}</h2>
-            <svg className="ego-graph" viewBox="0 0 300 300">
+            <svg
+              className="ego-graph"
+              viewBox="0 0 300 300"
+              onClick={() => egoSatellites.length > 0 && setEgoExpanded(true)}
+              style={{ cursor: egoSatellites.length > 0 ? "pointer" : undefined }}
+            >
               {/* Edges */}
               {egoSatellites.map((node, i) => (
                 <line
@@ -267,16 +281,20 @@ export function DomainDetail({
                 {domain.name.length > 8 ? domain.name.slice(0, 7) + "…" : domain.name}
               </text>
               <text x={CX} y={CY + 9} textAnchor="middle" fill="rgba(255,255,255,0.75)" fontSize={6.5}>
-                {domain.type === "fuente" ? "FUENTE" : "META"}
+                {domain.type === "fuente" ? (t.domainDetail?.sourceLabel || "FUENTE") : (t.domainDetail?.targetLabel || "META")}
               </text>
 
               {/* Empty state */}
               {egoSatellites.length === 0 && (
                 <text x={CX} y={220} textAnchor="middle" fill="var(--text-faint)" fontSize={9}>
-                  Sin conexiones registradas
+                  {t.domainDetail?.noConnections || "Sin conexiones registradas"}
                 </text>
               )}
             </svg>
+
+            {egoSatellites.length > 0 && (
+              <p className="ego-expand-hint">{t.domainDetail?.clickToExpand || "Clic para ampliar"}</p>
+            )}
 
             {/* Legend */}
             {(sourceMetaphors.length > 0 || targetMetaphors.length > 0) && (
@@ -284,25 +302,111 @@ export function DomainDetail({
                 {targetMetaphors.length > 0 && (
                   <span className="ego-legend-item">
                     <span className="ego-legend-dot" style={{ background: SOURCE_NODE_COLOR }} />
-                    dom. fuente
+                    {t.domainDetail?.legendSource || "dom. fuente"}
                   </span>
                 )}
                 {sourceMetaphors.length > 0 && (
                   <span className="ego-legend-item">
                     <span className="ego-legend-dot" style={{ background: TARGET_NODE_COLOR }} />
-                    dom. meta
+                    {t.domainDetail?.legendTarget || "dom. meta"}
                   </span>
                 )}
                 {totalRelations > 0 && (
                   <span className="ego-legend-item">
                     <span className="ego-legend-dot" style={{ background: SEMANTIC_NODE_COLOR }} />
-                    rel. semántica
+                    {t.domainDetail?.legendSemantic || "rel. semántica"}
                   </span>
                 )}
               </div>
             )}
           </section>
         </aside>
+
+        {/* Expanded ego graph modal */}
+        {egoExpanded && (
+          <div className="ego-modal-overlay" onClick={() => setEgoExpanded(false)}>
+            <div className="ego-modal" onClick={(e) => e.stopPropagation()}>
+              <button className="ego-modal-close" onClick={() => setEgoExpanded(false)} aria-label="Cerrar">
+                ✕
+              </button>
+              <h2 className="ego-modal-title">
+                {domain.name}
+                <span className="ego-modal-subtitle">
+                  — {t.domainDetail?.egoGraph || "Grafo ego-céntrico"}
+                </span>
+              </h2>
+              <svg className="ego-graph-expanded" viewBox="0 0 700 700">
+                {/* Edges */}
+                {egoSatellitesExpanded.map((node, i) => (
+                  <line
+                    key={i}
+                    x1={EX} y1={EY}
+                    x2={node.x} y2={node.y}
+                    stroke={node.color}
+                    strokeWidth={1.5}
+                    strokeOpacity={0.45}
+                  />
+                ))}
+
+                {/* Satellite nodes */}
+                {egoSatellitesExpanded.map((node, i) => (
+                  <Link
+                    key={i}
+                    href={`/corpus/${corpus.slug}/domains/${encodeURIComponent(node.name)}`}
+                  >
+                    <g style={{ cursor: "pointer" }}>
+                      <circle cx={node.x} cy={node.y} r={30} fill="white" stroke={node.color} strokeWidth={2} />
+                      <text
+                        x={node.x} y={node.y + 5}
+                        textAnchor="middle"
+                        fill="var(--text)"
+                        fontSize={10}
+                        fontWeight={500}
+                      >
+                        {node.name.length > 18 ? node.name.slice(0, 16) + "…" : node.name}
+                      </text>
+                    </g>
+                  </Link>
+                ))}
+
+                {/* Center node */}
+                <circle
+                  cx={EX} cy={EY} r={48}
+                  fill={getMacroColor(domain.macroCategory || "")}
+                  stroke="white" strokeWidth={3}
+                />
+                <text x={EX} y={EY - 5} textAnchor="middle" fill="white" fontSize={13} fontWeight={700}>
+                  {domain.name.length > 16 ? domain.name.slice(0, 14) + "…" : domain.name}
+                </text>
+                <text x={EX} y={EY + 12} textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize={10}>
+                  {domain.type === "fuente" ? (t.domainDetail?.sourceLabel || "FUENTE") : (t.domainDetail?.targetLabel || "META")}
+                </text>
+              </svg>
+
+              {/* Legend */}
+              <div className="ego-legend">
+                {targetMetaphors.length > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: SOURCE_NODE_COLOR }} />
+                    {t.domainDetail?.legendSource || "dom. fuente"}
+                  </span>
+                )}
+                {sourceMetaphors.length > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: TARGET_NODE_COLOR }} />
+                    {t.domainDetail?.legendTarget || "dom. meta"}
+                  </span>
+                )}
+                {totalRelations > 0 && (
+                  <span className="ego-legend-item">
+                    <span className="ego-legend-dot" style={{ background: SEMANTIC_NODE_COLOR }} />
+                    {t.domainDetail?.legendSemantic || "rel. semántica"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

@@ -152,7 +152,16 @@
     "metaphorsWhereTarget": "Metáforas donde",
     "isTarget": "es meta",
     "expr": "expr.",
-    "egoGraph": "Grafo ego-céntrico"
+    "egoGraph": "Grafo ego-céntrico",
+    "domainSource": "DOMINIO FUENTE",
+    "domainTarget": "DOMINIO META",
+    "sourceLabel": "FUENTE",
+    "targetLabel": "META",
+    "clickToExpand": "Clic para ampliar",
+    "legendSource": "dom. fuente",
+    "legendTarget": "dom. meta",
+    "legendSemantic": "rel. semántica",
+    "noConnections": "Sin conexiones registradas"
   },
   "concordance": {
     "eyebrow": "EXPLORADOR",
