@@ -129,6 +129,7 @@ function AboutSidebar({
   downloads?: { format: string; description: string; icon: typeof Download }[];
   autores?: { nombre: string; afiliacion?: string }[];
 }) {
+  const { t } = useLanguage();
   const defaultDownloads = [
     { format: "csv", description: "Plano, todos los campos", icon: FileText },
     { format: "json", description: "Jerárquico", icon: Code },
@@ -145,7 +146,8 @@ function AboutSidebar({
         <div className="citation-box-compact">
           <p className="citation-text-compact">
             {citation ||
-              "Andrés Caicedo, Valentina Ruiz (2024). Prensa Política Colombiana 2018-2024 (Versión 0.8.2) [Corpus de metáforas conceptuales MIPVU]. Semillero Corpus vs Machine. https://doi.org/10.5281/zenodo.15661203"}
+              t.about?.citationUnavailable ||
+              "La información de citación no está disponible en este momento."}
           </p>
         </div>
       </section>
