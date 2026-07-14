@@ -31,6 +31,7 @@ export function DomainsExplorer({
   const { t } = useLanguage();
   const [filterText, setFilterText] = useState("");
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [sortFreq, setSortFreq] = useState<"desc" | "asc" | null>(null);
 
   const filteredDomains = useMemo(() => {
     let result = domains;
@@ -50,8 +51,15 @@ export function DomainsExplorer({
       );
     }
 
+    // Sort by frequency if active
+    if (sortFreq) {
+      result = [...result].sort((a, b) =>
+        sortFreq === "desc" ? b.frecuencia - a.frecuencia : a.frecuencia - b.frecuencia
+      );
+    }
+
     return result;
-  }, [domains, filterText, activeTab]);
+  }, [domains, filterText, activeTab, sortFreq]);
 
   const toggleNode = (id: string) => {
     setExpandedNodes((prev) => {
@@ -128,7 +136,19 @@ export function DomainsExplorer({
                   <th>{t.domains?.domain || "DOMINIO"}</th>
                   <th>{t.domains?.type || "TIPO"}</th>
                   <th>{t.domains?.macro || "MACRO"}</th>
-                  <th className="numeric">{t.domains?.frequency || "FREQ."}</th>
+                  <th
+                    className="numeric domains-sortable-th"
+                    onClick={() =>
+                      setSortFreq((prev) =>
+                        prev === null ? "desc" : prev === "desc" ? "asc" : null
+                      )
+                    }
+                    title="Ordenar por frecuencia"
+                  >
+                    {t.domains?.frequency || "FREQ."}
+                    {sortFreq === "desc" && " ↓"}
+                    {sortFreq === "asc" && " ↑"}
+                  </th>
                 </tr>
               </thead>
               <tbody>
