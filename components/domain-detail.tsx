@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 
 import type { CorpusSummary } from "@/lib/corpora";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { downloadSvgElement } from "@/lib/download-svg";
 
 type DomainDetailProps = {
   corpus: CorpusSummary;
@@ -35,6 +36,8 @@ export function DomainDetail({
 }: DomainDetailProps) {
   const { t } = useLanguage();
   const [egoExpanded, setEgoExpanded] = useState(false);
+  const egoSvgRef = useRef<SVGSVGElement>(null);
+  const egoExpandedSvgRef = useRef<SVGSVGElement>(null);
 
   const getMacroColor = (category: string) => {
     const norm = category.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
@@ -237,7 +240,20 @@ export function DomainDetail({
         <aside className="domain-right">
           <section className="domain-section ego-graph-section">
             <h2>{t.domainDetail?.egoGraph || "Grafo ego-céntrico"}</h2>
+            <div className="chart-download-wrap">
+            <button
+              className="chart-download-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (egoSvgRef.current) downloadSvgElement(egoSvgRef.current, `ego-graph-${domain.name}.svg`);
+              }}
+              title="SVG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+              SVG
+            </button>
             <svg
+              ref={egoSvgRef}
               className="ego-graph"
               viewBox="0 0 300 300"
               onClick={() => egoSatellites.length > 0 && setEgoExpanded(true)}
@@ -291,6 +307,7 @@ export function DomainDetail({
                 </text>
               )}
             </svg>
+            </div>
 
             {egoSatellites.length > 0 && (
               <p className="ego-expand-hint">{t.domainDetail?.clickToExpand || "Clic para ampliar"}</p>
@@ -335,7 +352,18 @@ export function DomainDetail({
                   — {t.domainDetail?.egoGraph || "Grafo ego-céntrico"}
                 </span>
               </h2>
-              <svg className="ego-graph-expanded" viewBox="0 0 700 700">
+              <div className="chart-download-wrap">
+              <button
+                className="chart-download-btn"
+                onClick={() => {
+                  if (egoExpandedSvgRef.current) downloadSvgElement(egoExpandedSvgRef.current, `ego-graph-${domain.name}-expanded.svg`);
+                }}
+                title="SVG"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+                SVG
+              </button>
+              <svg ref={egoExpandedSvgRef} className="ego-graph-expanded" viewBox="0 0 700 700">
                 {/* Edges */}
                 {egoSatellitesExpanded.map((node, i) => (
                   <line
@@ -382,6 +410,7 @@ export function DomainDetail({
                   {domain.type === "fuente" ? (t.domainDetail?.sourceLabel || "FUENTE") : (t.domainDetail?.targetLabel || "META")}
                 </text>
               </svg>
+              </div>
 
               {/* Legend */}
               <div className="ego-legend">

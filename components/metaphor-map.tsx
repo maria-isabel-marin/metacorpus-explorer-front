@@ -8,6 +8,7 @@ import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { SankeyChart } from "./sankey-chart";
 import { NetworkGraph } from "./network-graph";
+import { downloadSvgElement } from "@/lib/download-svg";
 
 type MetaphorMapProps = {
   corpus: CorpusSummary;
@@ -162,15 +163,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
   const domainPositions = new Map(positionedDomains.map(d => [d.name, d]));
 
   const downloadSVG = () => {
-    if (!svgRef.current) return;
-    const svgData = new XMLSerializer().serializeToString(svgRef.current);
-    const blob = new Blob([svgData], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `metaphor-map-${corpus.slug}.svg`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (svgRef.current) downloadSvgElement(svgRef.current, `metaphor-map-${corpus.slug}.svg`);
   };
 
   const truncateDomainName = (name: string, maxLen = 18) => {
@@ -271,15 +264,18 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           </span>
         </div>
 
-        <button className="map-download-btn" onClick={downloadSVG}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-          </svg>
-          SVG
-        </button>
       </div>}
 
       {topView === "map" && <div className="map-visualization">
+        <div className="chart-download-wrap">
+        <button
+          className="chart-download-btn"
+          onClick={downloadSVG}
+          title="SVG"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+          SVG
+        </button>
         <svg
           ref={svgRef}
           className="map-svg"
@@ -381,6 +377,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
             );
           })}
         </svg>
+        </div>
 
         {/* Side panel with stats and legend */}
         <div className="map-sidebar">

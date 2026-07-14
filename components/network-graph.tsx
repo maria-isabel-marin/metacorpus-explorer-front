@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
+import { downloadCanvasAsPng } from "@/lib/download-svg";
 
 type NetworkGraphProps = {
   metaphors: ConceptualMetaphor[];
@@ -290,7 +291,20 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
         </div>
       </div>
 
-      <div className="network-canvas-wrap">
+      <div className="network-canvas-wrap chart-download-wrap">
+        {stabilized && (
+          <button
+            className="chart-download-btn"
+            onClick={() => {
+              const canvas = containerRef.current?.querySelector("canvas");
+              if (canvas) downloadCanvasAsPng(canvas, "directed-graph.png");
+            }}
+            title="PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+            PNG
+          </button>
+        )}
         {/* Loading overlay */}
         {!stabilized && (
           <div className="network-loading">

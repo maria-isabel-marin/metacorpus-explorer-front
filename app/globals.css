@@ -3090,6 +3090,46 @@ textarea {
   letter-spacing: 0.03em;
 }
 
+/* Chart download button (watermark style) */
+.chart-download-wrap {
+  position: relative;
+}
+
+.chart-download-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chart-download-btn:hover {
+  opacity: 1;
+  background: var(--surface-raised, #fff);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.chart-download-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* Ego graph expanded modal */
 .ego-modal-overlay {
   position: fixed;

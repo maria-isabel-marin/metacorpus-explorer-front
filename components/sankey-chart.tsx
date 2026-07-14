@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { downloadSvgElement } from "@/lib/download-svg";
 
 type SankeyChartProps = {
   metaphors: ConceptualMetaphor[];
@@ -202,6 +203,7 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
   const [typologyFilter, setTypologyFilter] = useState("all");
   const [containerWidth, setContainerWidth] = useState(860);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sankeySvgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -319,8 +321,19 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
         </div>
       )}
 
-      <div className="sankey-svg-container" ref={containerRef}>
+      <div className="sankey-svg-container chart-download-wrap" ref={containerRef}>
+        <button
+          className="chart-download-btn"
+          onClick={() => {
+            if (sankeySvgRef.current) downloadSvgElement(sankeySvgRef.current, "sankey-chart.svg");
+          }}
+          title="SVG"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+          SVG
+        </button>
         <svg
+          ref={sankeySvgRef}
           viewBox={`0 0 ${WIDTH} ${height}`}
           width="100%"
           height={height}
