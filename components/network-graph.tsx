@@ -27,6 +27,7 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
   const networkRef = useRef<any>(null);
   const [typologyFilter, setTypologyFilter] = useState("all");
   const [exactDegree, setExactDegree] = useState<number | null>(null);
+  const [minRelations, setMinRelations] = useState(0);
   const [stabilized, setStabilized] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -75,6 +76,9 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
       const t = m.targetDomain;
       if (!s || s === "—" || !t || t === "—") continue;
       if (!allowedSources.has(s)) continue;
+      // Apply minRelations filter (out-degree of source node)
+      const srcDeg = outDegree.get(s)?.size ?? 0;
+      if (srcDeg < minRelations) continue;
 
       if (!nodeMap.has(s)) {
         nodeMap.set(s, { id: s, label: s, value: degreeMap.get(s) ?? 1, group: "source" });
@@ -99,7 +103,7 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
     const degreeOptions = Array.from(degreeCounts.entries()).sort((a, b) => a[0] - b[0]);
 
     return { nodes: Array.from(nodeMap.values()), edges: edgeList, maxOutDegree: maxOut, degreeOptions };
-  }, [metaphors, typologyFilter, exactDegree]);
+  }, [metaphors, typologyFilter, exactDegree, minRelations]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -266,6 +270,21 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
         <span className="network-stats">
           {nodes.length} dominios · {edges.length} metáforas
         </span>
+      </div>
+
+      {/* Min relations slider */}
+      <div className="network-degree-filter">
+        <span className="network-degree-label">Mín. relaciones:</span>
+        <input
+          type="range"
+          min="0"
+          max={maxOutDegree}
+          value={minRelations}
+          onChange={(e) => setMinRelations(Number(e.target.value))}
+          className="map-range"
+          style={{ width: 120, verticalAlign: "middle" }}
+        />
+        <span className="network-degree-label" style={{ marginLeft: 6 }}>≥ {minRelations} rel.</span>
       </div>
 
       {/* Exact degree filter */}

@@ -34,10 +34,11 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
   const { t } = useLanguage();
   const [topView, setTopView] = useState<TopView>("map");
   const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
+  const [minExpressions, setMinExpressions] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Extract unique domains and build connections - LIMIT to top domains
-  const { domains, connections } = useMemo(() => {
+  const { domains, connections, maxCount } = useMemo(() => {
     const domainSet = new Map<string, { 
       name: string; 
       type: "source" | "target"; 
@@ -98,17 +99,25 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
       .sort((a, b) => b.count - a.count)
       .slice(0, 15);
     
-    const selectedDomainNames = new Set([...sourceDomains, ...targetDomains].map(d => d.name));
+    // Apply minExpressions filter
+    const filteredSourceDomains = sourceDomains.filter(d => d.count >= minExpressions);
+    const filteredTargetDomains = targetDomains.filter(d => d.count >= minExpressions);
+
+    const selectedDomainNames = new Set([...filteredSourceDomains, ...filteredTargetDomains].map(d => d.name));
 
     // Filter connections to only include selected domains
     const filteredConnections = Array.from(connMap.values())
       .filter(c => selectedDomainNames.has(c.source) && selectedDomainNames.has(c.target));
 
+    // Compute max expression count across top domains (before filter) for slider range
+    const maxCount = Math.max(1, ...sourceDomains.map(d => d.count), ...targetDomains.map(d => d.count));
+
     return {
-      domains: [...sourceDomains, ...targetDomains],
+      domains: [...filteredSourceDomains, ...filteredTargetDomains],
       connections: filteredConnections,
+      maxCount,
     };
-  }, [metaphors]);
+  }, [metaphors, minExpressions]);
 
   // Position domains in a circle
   const positionedDomains = useMemo(() => {
@@ -158,6 +167,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
     });
     
     return positioned;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domains]);
 
   const domainPositions = new Map(positionedDomains.map(d => [d.name, d]));
@@ -401,8 +411,15 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
 
           <div className="map-expressions-control">
             <h4>{t.map?.minExpressions || "MÍN. EXPRESIONES"}</h4>
-            <input type="range" min="0" max="100" defaultValue="0" className="map-range" />
-            <span className="map-range-value">≥ 0 exp.</span>
+            <input
+              type="range"
+              min="0"
+              max={maxCount}
+              value={minExpressions}
+              onChange={(e) => setMinExpressions(Number(e.target.value))}
+              className="map-range"
+            />
+            <span className="map-range-value">≥ {minExpressions} exp.</span>
           </div>
 
           <div className="map-stats">

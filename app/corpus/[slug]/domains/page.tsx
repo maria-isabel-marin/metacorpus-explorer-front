@@ -19,17 +19,23 @@ export default async function DomainsPage({ params, searchParams }: DomainsPageP
     return notFound();
   }
 
+  let allDomains: ApiDomain[] = [];
   let domains: ApiDomain[] = [];
   let relations: ApiDomainRelation[] = [];
   
   try {
+    const allDomainsData = await fetchDomains(slug);
+    allDomains = allDomainsData.items;
+
     const tipoFilter = tipo === "fuente" || tipo === "meta" ? tipo : undefined;
-    const domainsData = await fetchDomains(slug, tipoFilter);
-    domains = domainsData.items;
+    domains = tipoFilter
+      ? allDomains.filter(d => d.tipo === tipoFilter)
+      : allDomains;
     
     const relationsData = await fetchDomainRelations(slug);
     relations = relationsData.items;
   } catch {
+    allDomains = [];
     domains = [];
     relations = [];
   }
@@ -37,9 +43,9 @@ export default async function DomainsPage({ params, searchParams }: DomainsPageP
   const treeData = buildDomainTree(domains);
   
   const counts = {
-    total: domains.length,
-    fuente: domains.filter(d => d.tipo === "fuente").length,
-    meta: domains.filter(d => d.tipo === "meta").length,
+    total: allDomains.length,
+    fuente: allDomains.filter(d => d.tipo === "fuente").length,
+    meta: allDomains.filter(d => d.tipo === "meta").length,
   };
 
   return (
