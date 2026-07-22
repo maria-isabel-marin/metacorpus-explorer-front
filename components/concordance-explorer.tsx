@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ChevronDown } from "lucide-react";
@@ -101,6 +101,29 @@ export function ConcordanceExplorer({
     
     return { left, focus, right };
   };
+
+  // Client-side sorting of the current page of expressions
+  const sortedExpressions = useMemo(() => {
+    if (sortBy === "orden") {
+      return [...expressions].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    }
+    if (sortBy === "foco") {
+      return [...expressions].sort((a, b) =>
+        (a.foco ?? "").localeCompare(b.foco ?? "", undefined, { sensitivity: "base" })
+      );
+    }
+    if (sortBy === "contexto") {
+      // Sort by right context (text after the focus)
+      const getRight = (expr: ApiExpression) => {
+        const { right } = extractKwic(expr);
+        return right;
+      };
+      return [...expressions].sort((a, b) =>
+        getRight(a).localeCompare(getRight(b), undefined, { sensitivity: "base" })
+      );
+    }
+    return expressions;
+  }, [expressions, sortBy]);
 
   return (
     <main className="concordance-shell">
@@ -204,7 +227,7 @@ export function ConcordanceExplorer({
             </tr>
           </thead>
           <tbody>
-            {expressions.map((expr, idx) => {
+            {sortedExpressions.map((expr, idx) => {
               const { left, focus, right } = extractKwic(expr);
               const typologyColor = TYPOLOGY_COLORS[expr.tipologia ?? "OTRA"] ?? TYPOLOGY_COLORS.OTRA;
               const globalIndex = (currentPage - 1) * pageSize + idx + 1;

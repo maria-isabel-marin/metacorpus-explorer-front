@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
+import { downloadCanvasAsPng } from "@/lib/download-svg";
 
 type NetworkGraphProps = {
   metaphors: ConceptualMetaphor[];
@@ -26,6 +27,7 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
   const networkRef = useRef<any>(null);
   const [typologyFilter, setTypologyFilter] = useState("all");
   const [exactDegree, setExactDegree] = useState<number | null>(null);
+  const [minRelations, setMinRelations] = useState(0);
   const [stabilized, setStabilized] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -74,6 +76,9 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
       const t = m.targetDomain;
       if (!s || s === "—" || !t || t === "—") continue;
       if (!allowedSources.has(s)) continue;
+      // Apply minRelations filter (out-degree of source node)
+      const srcDeg = outDegree.get(s)?.size ?? 0;
+      if (srcDeg < minRelations) continue;
 
       if (!nodeMap.has(s)) {
         nodeMap.set(s, { id: s, label: s, value: degreeMap.get(s) ?? 1, group: "source" });
@@ -98,7 +103,7 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
     const degreeOptions = Array.from(degreeCounts.entries()).sort((a, b) => a[0] - b[0]);
 
     return { nodes: Array.from(nodeMap.values()), edges: edgeList, maxOutDegree: maxOut, degreeOptions };
-  }, [metaphors, typologyFilter, exactDegree]);
+  }, [metaphors, typologyFilter, exactDegree, minRelations]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -267,6 +272,21 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
         </span>
       </div>
 
+      {/* Min relations slider */}
+      <div className="network-degree-filter">
+        <span className="network-degree-label">Mín. relaciones:</span>
+        <input
+          type="range"
+          min="0"
+          max={maxOutDegree}
+          value={minRelations}
+          onChange={(e) => setMinRelations(Number(e.target.value))}
+          className="map-range"
+          style={{ width: 120, verticalAlign: "middle" }}
+        />
+        <span className="network-degree-label" style={{ marginLeft: 6 }}>≥ {minRelations} rel.</span>
+      </div>
+
       {/* Exact degree filter */}
       <div className="network-degree-filter">
         <span className="network-degree-label">Relaciones del dominio fuente:</span>
@@ -290,7 +310,20 @@ export function NetworkGraph({ metaphors }: NetworkGraphProps) {
         </div>
       </div>
 
-      <div className="network-canvas-wrap">
+      <div className="network-canvas-wrap chart-download-wrap">
+        {stabilized && (
+          <button
+            className="chart-download-btn"
+            onClick={() => {
+              const canvas = containerRef.current?.querySelector("canvas");
+              if (canvas) downloadCanvasAsPng(canvas, "directed-graph.png");
+            }}
+            title="PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+            PNG
+          </button>
+        )}
         {/* Loading overlay */}
         {!stabilized && (
           <div className="network-loading">
