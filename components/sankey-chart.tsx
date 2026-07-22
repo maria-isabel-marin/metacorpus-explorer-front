@@ -7,6 +7,7 @@ import { downloadSvgElement } from "@/lib/download-svg";
 
 type SankeyChartProps = {
   metaphors: ConceptualMetaphor[];
+  focusRole: "source" | "target";
 };
 
 type SankeyNode = {
@@ -52,28 +53,51 @@ const OTHER_COLOR = "#94a3b8";
 const NODE_WIDTH = 16;
 const NODE_GAP = 14;
 const LABEL_GAP = 8;
-const PADDING_TOP = 20;
+const PADDING_TOP = 38; // extra room for SVG column headers
 const PADDING_BOTTOM = 20;
-const PADDING_H = 210; // space for labels
+const PADDING_H = 40; // chart bars pushed to the edges; labels flow inward
 const NODE_H = 28; // fixed height per node
+
+function typologyKey(typology?: string): string {
+  return (typology ?? "OTRA")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
 
 function buildSankey(
   metaphors: ConceptualMetaphor[],
   typologyFilter: string,
+  focusRole: "source" | "target",
+  minConnections: number,
   width: number
-): { nodes: SankeyNode[]; links: SankeyLink[]; height: number } {
+): { nodes: SankeyNode[]; links: SankeyLink[]; height: number; maxConnections: number } {
   const filtered =
-    typologyFilter === "all"
+    (typologyFilter === "all"
       ? metaphors
-      : metaphors.filter(
-          (m) => (m.typology ?? "OTRA").toUpperCase() === typologyFilter
-        );
+      : metaphors.filter((m) => typologyKey(m.typology) === typologyFilter))
+      .filter((m) => m.sourceDomain && m.sourceDomain !== "—" && m.targetDomain && m.targetDomain !== "—");
+  const connectionMap = new Map<string, Set<string>>();
+
+  for (const metaphor of filtered) {
+    const focusDomain = focusRole === "source" ? metaphor.sourceDomain : metaphor.targetDomain;
+    const connectedDomain = focusRole === "source" ? metaphor.targetDomain : metaphor.sourceDomain;
+    if (!connectionMap.has(focusDomain)) connectionMap.set(focusDomain, new Set());
+    connectionMap.get(focusDomain)!.add(connectedDomain);
+  }
+
+  const maxConnections = Math.max(0, ...Array.from(connectionMap.values()).map((connections) => connections.size));
+  const visibleMetaphors = filtered.filter((metaphor) => {
+    const focusDomain = focusRole === "source" ? metaphor.sourceDomain : metaphor.targetDomain;
+    return (connectionMap.get(focusDomain)?.size ?? 0) >= minConnections;
+  });
 
   const flowMap = new Map<string, { value: number; typology: string }>();
   const sourceValues = new Map<string, number>();
   const targetValues = new Map<string, number>();
 
-  for (const m of filtered) {
+  for (const m of visibleMetaphors) {
     const s = m.sourceDomain;
     const tgt = m.targetDomain;
     if (!s || s === "—" || !tgt || tgt === "—") continue;
@@ -87,7 +111,7 @@ function buildSankey(
     targetValues.set(tgt, (targetValues.get(tgt) ?? 0) + m.expressions);
   }
 
-  if (sourceValues.size === 0) return { nodes: [], links: [], height: 400 };
+  if (sourceValues.size === 0) return { nodes: [], links: [], height: 400, maxConnections };
 
   const totalValue = Array.from(sourceValues.values()).reduce((a, b) => a + b, 0);
 
@@ -98,8 +122,8 @@ function buildSankey(
   const maxNodes = Math.max(sortedSource.length, sortedTarget.length);
   const height = PADDING_TOP + PADDING_BOTTOM + maxNodes * (NODE_H + NODE_GAP);
 
-  const sourceX = PADDING_H;
-  const targetX = width - PADDING_H - NODE_WIDTH;
+  const sourceX = focusRole === "source" ? PADDING_H : width - PADDING_H - NODE_WIDTH;
+  const targetX = focusRole === "source" ? width - PADDING_H - NODE_WIDTH : PADDING_H;
 
   const buildNodes = (
     entries: [string, number][],
@@ -158,7 +182,7 @@ function buildSankey(
     targetOffsets.set(tNode.id, tOff + thickness);
   }
 
-  return { nodes: [...sourceNodes, ...targetNodes], links, height };
+  return { nodes: [...sourceNodes, ...targetNodes], links, height, maxConnections };
 }
 
 function linkPath(
@@ -195,12 +219,13 @@ type TooltipData = {
   y: number;
 };
 
-export function SankeyChart({ metaphors }: SankeyChartProps) {
+export function SankeyChart({ metaphors, focusRole }: SankeyChartProps) {
   const { t } = useLanguage();
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [typologyFilter, setTypologyFilter] = useState("all");
+  const [minConnections, setMinConnections] = useState(0);
   const [containerWidth, setContainerWidth] = useState(860);
   const containerRef = useRef<HTMLDivElement>(null);
   const sankeySvgRef = useRef<SVGSVGElement>(null);
@@ -218,13 +243,13 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
 
   const WIDTH = containerWidth;
 
-  const { nodes, links, height } = useMemo(
-    () => buildSankey(metaphors, typologyFilter, WIDTH),
-    [metaphors, typologyFilter, WIDTH]
+  const { nodes, links, height, maxConnections } = useMemo(
+    () => buildSankey(metaphors, typologyFilter, focusRole, minConnections, WIDTH),
+    [metaphors, typologyFilter, focusRole, minConnections, WIDTH]
   );
 
-  const sourceEdgeX = PADDING_H + NODE_WIDTH;
-  const targetEdgeX = WIDTH - PADDING_H - NODE_WIDTH;
+  const sourceEdgeX = focusRole === "source" ? PADDING_H + NODE_WIDTH : WIDTH - PADDING_H - NODE_WIDTH;
+  const targetEdgeX = focusRole === "source" ? WIDTH - PADDING_H - NODE_WIDTH : PADDING_H + NODE_WIDTH;
 
   const getNodeConnections = (nodeId: string) => {
     const isSource = nodeId.startsWith("s:");
@@ -260,13 +285,12 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
     }
   };
 
-  if (nodes.length === 0) {
-    return (
-      <div className="sankey-empty">
-        <p>No hay datos de dominio disponibles para mostrar.</p>
-      </div>
-    );
-  }
+  const handleTypologyFilterChange = (filter: string) => {
+    setHoveredLink(null);
+    setHoveredNode(null);
+    setTooltip(null);
+    setTypologyFilter(filter);
+  };
 
   return (
     <div className="sankey-wrapper">
@@ -276,7 +300,7 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
           <button
             key={f.key}
             className={`sankey-filter-tab ${typologyFilter === f.key ? "active" : ""}`}
-            onClick={() => setTypologyFilter(f.key)}
+            onClick={() => handleTypologyFilterChange(f.key)}
           >
             {f.key !== "all" && (
               <span
@@ -284,21 +308,39 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
                 style={{ backgroundColor: TYPOLOGY_COLORS[f.key] }}
               />
             )}
-            {f.label}
+            {f.key === "all"
+              ? (t.map?.all || "Todas")
+              : f.key === "ESTRUCTURAL"
+                ? (t.map?.structuralFull || "Estructural")
+                : f.key === "ONTOLOGICA"
+                  ? (t.map?.ontologicalFull || "Ontológica")
+                  : (t.map?.orientationalFull || "Orientacional")}
           </button>
         ))}
       </div>
 
-      {/* Column headers */}
-      <div className="sankey-column-labels">
-        <span className="sankey-col-label sankey-col-source">
-          {t.map?.sankeySource || "DOMINIO FUENTE"}
-        </span>
-        <span className="sankey-col-label sankey-col-target">
-          {t.map?.sankeyTarget || "DOMINIO META"}
-        </span>
+      <div className="sankey-connection-filter">
+        <label htmlFor="sankey-min-connections">
+          {t.map?.connectionsOf || "Conexiones del dominio"} {focusRole === "source" ? (t.map?.sourceDomain || "fuente") : (t.map?.targetDomain || "meta")}
+        </label>
+        <input
+          id="sankey-min-connections"
+          type="range"
+          min="0"
+          max={maxConnections}
+          value={Math.min(minConnections, maxConnections)}
+          onChange={(event) => setMinConnections(Number(event.target.value))}
+          className="map-range"
+        />
+        <span>≥ {Math.min(minConnections, maxConnections)} {t.map?.connections || "conexiones"}</span>
       </div>
 
+      {nodes.length === 0 ? (
+        <div className="sankey-empty">
+          <p>No hay datos de dominio disponibles para mostrar.</p>
+        </div>
+      ) : (
+        <>
       {/* HTML tooltip — fixed position following mouse */}
       {tooltip && (
         <div
@@ -322,16 +364,18 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
       )}
 
       <div className="sankey-svg-container chart-download-wrap" ref={containerRef}>
-        <button
-          className="chart-download-btn"
+        <div className="sankey-download-toolbar">
+          <button
+            className="chart-download-btn sankey-download-btn"
           onClick={() => {
             if (sankeySvgRef.current) downloadSvgElement(sankeySvgRef.current, "sankey-chart.svg");
           }}
           title="SVG"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-          SVG
-        </button>
+            SVG
+          </button>
+        </div>
         <svg
           ref={sankeySvgRef}
           viewBox={`0 0 ${WIDTH} ${height}`}
@@ -340,6 +384,30 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
           className="sankey-svg"
           preserveAspectRatio="none"
         >
+          {/* Column headers at the far left/right edges so the chart itself reaches the edges */}
+          <text
+            x={0}
+            y={22}
+            textAnchor="start"
+            fontSize={11}
+            fontWeight={700}
+            letterSpacing="0.08em"
+            fill="var(--text-faint)"
+          >
+            {focusRole === "source" ? (t.map?.sankeySource || "DOMINIO FUENTE") : (t.map?.sankeyTarget || "DOMINIO META")}
+          </text>
+          <text
+            x={WIDTH}
+            y={22}
+            textAnchor="end"
+            fontSize={11}
+            fontWeight={700}
+            letterSpacing="0.08em"
+            fill="var(--text-faint)"
+          >
+            {focusRole === "source" ? (t.map?.sankeyTarget || "DOMINIO META") : (t.map?.sankeySource || "DOMINIO FUENTE")}
+          </text>
+
           <defs>
             {links.map((l, i) => {
               const color =
@@ -379,10 +447,11 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
           {nodes.map((node) => {
             const isActive = hoveredNode === node.id;
             const dim = !!hoveredNode && !isActive;
-            const labelX = node.side === "source"
+            const isLeftColumn = node.x < WIDTH / 2;
+            const labelX = isLeftColumn
               ? node.x + NODE_WIDTH + LABEL_GAP
               : node.x - LABEL_GAP;
-            const hitX = node.side === "source" ? node.x : node.x - PADDING_H + NODE_WIDTH + LABEL_GAP;
+            const hitX = isLeftColumn ? node.x : node.x - PADDING_H + NODE_WIDTH + LABEL_GAP;
             return (
               <g
                 key={node.id}
@@ -394,7 +463,7 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
               >
                 {/* Invisible wide hit area covering bar + label */}
                 <rect
-                  x={node.side === "source" ? node.x : node.x - (PADDING_H - NODE_WIDTH - LABEL_GAP)}
+                  x={isLeftColumn ? node.x : node.x - (PADDING_H - NODE_WIDTH - LABEL_GAP)}
                   y={node.y - 2}
                   width={PADDING_H - LABEL_GAP}
                   height={node.height + 4}
@@ -412,7 +481,7 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
                 <text
                   x={labelX}
                   y={node.y + node.height / 2}
-                  textAnchor={node.side === "source" ? "start" : "end"}
+                  textAnchor={isLeftColumn ? "start" : "end"}
                   dominantBaseline="middle"
                   fontSize={11}
                   fontWeight={isActive ? 700 : 400}
@@ -430,7 +499,8 @@ export function SankeyChart({ metaphors }: SankeyChartProps) {
           })}
         </svg>
       </div>
-
+        </>
+      )}
     </div>
   );
 }
