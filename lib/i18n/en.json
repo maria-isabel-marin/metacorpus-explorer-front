@@ -152,7 +152,16 @@
     "metaphorsWhereTarget": "Metaphors where",
     "isTarget": "is target",
     "expr": "expr.",
-    "egoGraph": "Ego-centered graph"
+    "egoGraph": "Ego-centered graph",
+    "domainSource": "SOURCE DOMAIN",
+    "domainTarget": "TARGET DOMAIN",
+    "sourceLabel": "SOURCE",
+    "targetLabel": "TARGET",
+    "clickToExpand": "Click to expand",
+    "legendSource": "source dom.",
+    "legendTarget": "target dom.",
+    "legendSemantic": "semantic rel.",
+    "noConnections": "No connections registered"
   },
   "concordance": {
     "eyebrow": "EXPLORER",
