@@ -171,17 +171,18 @@ function AboutSidebar({
       <section className="sidebar-section">
         <h3>Autoría y anotación</h3>
         <div className="authors-list">
-          {(autores || [
-            { nombre: "Andrés Caicedo", afiliacion: "Universidad de los Andes" },
-            { nombre: "Valentina Ruiz", afiliacion: "Universidad de Medellín" },
-          ]).map((autor) => (
-            <div key={autor.nombre} className="author-item">
-              <span className="author-name">{autor.nombre}</span>
-              {autor.afiliacion && (
-                <span className="author-affiliation">{autor.afiliacion}</span>
-              )}
-            </div>
-          ))}
+          {autores && autores.length > 0 ? (
+            autores.map((autor) => (
+              <div key={autor.nombre} className="author-item">
+                <span className="author-name">{autor.nombre}</span>
+                {autor.afiliacion && (
+                  <span className="author-affiliation">{autor.afiliacion}</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="empty-state">Sin autores registrados</p>
+          )}
         </div>
       </section>
     </aside>
