@@ -42,7 +42,7 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
       fetchCorpusStats(slug),
       fetchDomains(slug, "fuente"),
       fetchDomains(slug, "meta"),
-      fetchMetaphors(slug, { limit: 100 }),
+      fetchMetaphors(slug, { limit: 10000 }),
       fetchDensityData(slug, 100),
       fetchProximityData(slug, 50, 1000),
       fetchDomainMatrix(slug, 1, 30),
@@ -52,15 +52,12 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
     corpusStats = stats;
     sourceDomains = domainsSource.items
       .sort((a, b) => b.frecuencia - a.frecuencia)
-      .slice(0, 10)
       .map(d => ({ nombre: d.nombre, frecuencia: d.frecuencia }));
     targetDomains = domainsTarget.items
       .sort((a, b) => b.frecuencia - a.frecuencia)
-      .slice(0, 10)
       .map(d => ({ nombre: d.nombre, frecuencia: d.frecuencia }));
     allMetaphors = metaphors.items
       .sort((a, b) => b.total_expresiones - a.total_expresiones)
-      .slice(0, 10)
       .map(m => ({
         nombre: m.nombre,
         total_expresiones: m.total_expresiones,

@@ -2213,30 +2213,43 @@ textarea {
   color: var(--text-soft);
 }
 
-.sankey-column-labels {
+.sankey-connection-filter {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  font-size: 0.75rem;
+  color: var(--text-soft);
 }
 
-.sankey-col-label {
-  width: 160px;
+.sankey-connection-filter label {
+  font-weight: 600;
+  color: var(--text);
 }
 
-.sankey-col-source {
-  text-align: left;
-}
-
-.sankey-col-target {
-  text-align: right;
+.sankey-connection-filter .map-range {
+  width: min(220px, 100%);
+  margin: 0;
 }
 
 .sankey-svg-container {
   width: 100%;
+}
+
+.sankey-download-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 30px;
+}
+
+.sankey-download-btn {
+  position: static;
+  align-self: flex-start;
 }
 
 .sankey-svg {
@@ -2675,6 +2688,79 @@ textarea {
   border-color: var(--primary);
 }
 
+.visualization-focus-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.visualization-focus-control span {
+  margin: 0 6px 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.visualization-focus-control button {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.visualization-focus-control button:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.visualization-focus-control button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.map-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.map-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.map-color-control input {
+  width: 22px;
+  height: 22px;
+  padding: 1px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
 .map-macro-legend {
   display: flex;
   gap: 16px;
@@ -2735,8 +2821,9 @@ textarea {
   height: auto;
   min-height: 600px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 12px;
+  background: radial-gradient(circle at center, var(--surface-raised), var(--surface));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .map-domain-label {
@@ -4213,6 +4300,47 @@ textarea {
 }
 
 /* Statistics Grid Layout */
+.statistics-top-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.statistics-top-control span {
+  margin: 0 6px 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.statistics-top-control button {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.statistics-top-control button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.statistics-top-control button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
 .statistics-grid {
   display: flex;
   flex-direction: column;
@@ -4244,6 +4372,10 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
+}
+
+.stats-card .chart-header {
+  padding-right: 76px;
 }
 
 /* Chart Header */

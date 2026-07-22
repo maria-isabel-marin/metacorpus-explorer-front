@@ -22,6 +22,7 @@ type MetaphorMapProps = {
 };
 
 type TopView = "map" | "sankey" | "graph";
+type FocusRole = "source" | "target";
 
 const typologyColors: Record<string, string> = {
   "ESTRUCTURAL": "#64748b", // slate
@@ -33,8 +34,11 @@ const typologyColors: Record<string, string> = {
 export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: MetaphorMapProps) {
   const { t } = useLanguage();
   const [topView, setTopView] = useState<TopView>("map");
+  const [focusRole, setFocusRole] = useState<FocusRole>("source");
   const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
   const [minExpressions, setMinExpressions] = useState(0);
+  const [sourceColor, setSourceColor] = useState("#3b82f6");
+  const [targetColor, setTargetColor] = useState("#f59e0b");
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Extract unique domains and build connections - LIMIT to top domains
@@ -123,6 +127,8 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
   const positionedDomains = useMemo(() => {
     const sourceDomains = domains.filter(d => d.type === "source");
     const targetDomains = domains.filter(d => d.type === "target");
+    const primaryDomains = focusRole === "source" ? sourceDomains : targetDomains;
+    const secondaryDomains = focusRole === "source" ? targetDomains : sourceDomains;
     
     const cx = 400;
     const cy = 350;
@@ -139,8 +145,8 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
     }> = [];
     
     // Position source domains on left side
-    sourceDomains.forEach((d, i) => {
-      const angle = Math.PI + (Math.PI / 2) * ((i + 0.5) / sourceDomains.length) - Math.PI / 4;
+    primaryDomains.forEach((d, i) => {
+      const angle = Math.PI + (Math.PI / 2) * ((i + 0.5) / primaryDomains.length) - Math.PI / 4;
       positioned.push({
         name: d.name,
         type: d.type,
@@ -153,8 +159,8 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
     });
     
     // Position target domains on right side
-    targetDomains.forEach((d, i) => {
-      const angle = (Math.PI / 2) * ((i + 0.5) / targetDomains.length) - Math.PI / 4;
+    secondaryDomains.forEach((d, i) => {
+      const angle = (Math.PI / 2) * ((i + 0.5) / secondaryDomains.length) - Math.PI / 4;
       positioned.push({
         name: d.name,
         type: d.type,
@@ -168,7 +174,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
     
     return positioned;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domains]);
+  }, [domains, focusRole]);
 
   const domainPositions = new Map(positionedDomains.map(d => [d.name, d]));
 
@@ -234,8 +240,24 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
         </button>
       </div>
 
-      {topView === "sankey" && <SankeyChart metaphors={metaphors} />}
-      {topView === "graph" && <NetworkGraph metaphors={metaphors} />}
+      <div className="visualization-focus-control">
+        <span>{t.map?.focus || "Enfocar en"}</span>
+        <button
+          className={focusRole === "source" ? "active" : ""}
+          onClick={() => setFocusRole("source")}
+        >
+          {t.map?.sourceDomain || "Dominio fuente"}
+        </button>
+        <button
+          className={focusRole === "target" ? "active" : ""}
+          onClick={() => setFocusRole("target")}
+        >
+          {t.map?.targetDomain || "Dominio meta"}
+        </button>
+      </div>
+
+      {topView === "sankey" && <SankeyChart metaphors={metaphors} focusRole={focusRole} />}
+      {topView === "graph" && <NetworkGraph metaphors={metaphors} focusRole={focusRole} />}
 
       {topView === "map" && <div className="map-controls">
         <div className="map-filter-tabs">
@@ -255,23 +277,15 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           ))}
         </div>
 
-        <div className="map-macro-legend">
-          <span className="map-macro-item">
-            <span className="map-macro-dot" style={{ background: "#8b5a2b" }} />
-            {t.map?.physical || "CUERPO Y MUNDO FÍSICO"}
-          </span>
-          <span className="map-macro-item">
-            <span className="map-macro-dot" style={{ background: "#3b82f6" }} />
-            {t.map?.mental || "MUNDO MENTAL"}
-          </span>
-          <span className="map-macro-item">
-            <span className="map-macro-dot" style={{ background: "#dc2626" }} />
-            {t.map?.social || "MUNDO SOCIAL"}
-          </span>
-          <span className="map-macro-item">
-            <span className="map-macro-dot" style={{ background: "#16a34a" }} />
-            {t.map?.natural || "MUNDO NATURAL"}
-          </span>
+        <div className="map-color-controls">
+          <label className="map-color-control">
+            <span>{t.map?.source || "Fuente"}</span>
+            <input type="color" value={sourceColor} onChange={(event) => setSourceColor(event.target.value)} />
+          </label>
+          <label className="map-color-control">
+            <span>{t.map?.target || "Meta"}</span>
+            <input type="color" value={targetColor} onChange={(event) => setTargetColor(event.target.value)} />
+          </label>
         </div>
 
       </div>}
@@ -340,14 +354,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
               c => c.source === domain.name || c.target === domain.name
             );
             
-            // Color based on macro category (simplified)
-            const macroColors: Record<string, string> = {
-              "Cuerpo y mundo físico": "#8b5a2b",
-              "Mundo mental": "#3b82f6",
-              "Mundo social": "#dc2626",
-              "Mundo natural": "#16a34a",
-            };
-            const color = macroColors[domain.macroCategory] || "#64748b";
+            const color = domain.type === "source" ? sourceColor : targetColor;
 
             return (
               <g
