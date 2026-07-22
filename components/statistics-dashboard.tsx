@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef, useState, type ReactNode } from "react";
 import { useLanguage } from "@/lib/i18n/language-context";
 import type { DensityData, ProximityData, DomainMatrixData } from "@/lib/api";
+import { downloadHtmlAsSvg } from "@/lib/download-svg";
 
 // Types for statistics data
 type DomainStat = {
@@ -68,13 +70,14 @@ function HorizontalBarChart({
   color: string;
   label: string;
 }) {
+  const { t } = useLanguage();
   const maxValue = Math.max(...data.map((d) => d.frecuencia), 1);
 
   return (
     <div className="bar-chart">
       <div className="chart-header">
         <span className="chart-title">{label}</span>
-        <span className="chart-subtitle">frecuencia</span>
+        <span className="chart-subtitle">{t.statistics?.frequency || "frecuencia"}</span>
       </div>
       <div className="bar-list">
         {data.map((item, index) => (
@@ -107,13 +110,14 @@ function MetaphorBarChart({
   data: MetaphorStat[];
   label: string;
 }) {
+  const { t } = useLanguage();
   const maxValue = Math.max(...data.map((d) => d.total_expresiones), 1);
 
   return (
     <div className="bar-chart metaphor-chart">
       <div className="chart-header">
         <span className="chart-title">{label}</span>
-        <span className="chart-subtitle">por número de expresiones</span>
+        <span className="chart-subtitle">{t.statistics?.byExpressions || "por número de expresiones"}</span>
       </div>
       <div className="bar-list">
         {data.map((item) => {
@@ -162,14 +166,15 @@ function DonutChart({
   total: number;
   label: string;
 }) {
+  const { t } = useLanguage();
   if (data.length === 0) {
     return (
       <div className="donut-chart-container">
         <div className="chart-header">
           <span className="chart-title">{label}</span>
-          <span className="chart-subtitle">distribución</span>
+          <span className="chart-subtitle">{t.statistics?.distribution || "distribución"}</span>
         </div>
-        <p className="chart-empty">Sin datos de tipología</p>
+        <p className="chart-empty">{t.statistics?.noTypologyData || "Sin datos de tipología"}</p>
       </div>
     );
   }
@@ -182,7 +187,7 @@ function DonutChart({
     <div className="donut-chart-container">
       <div className="chart-header">
         <span className="chart-title">{label}</span>
-        <span className="chart-subtitle">distribución</span>
+        <span className="chart-subtitle">{t.statistics?.distribution || "distribución"}</span>
       </div>
       <div className="donut-wrapper">
         <svg viewBox="0 0 100 100" className="donut-svg">
@@ -207,7 +212,7 @@ function DonutChart({
           <text x="50" y="48" textAnchor="middle" className="donut-center-value">
             {total.toLocaleString()}
           </text>
-          <text x="50" y="58" textAnchor="middle" className="donut-center-label">expresiones</text>
+          <text x="50" y="58" textAnchor="middle" className="donut-center-label">{t.statistics?.expressions || "expresiones"}</text>
         </svg>
       </div>
       <div className="donut-legend">
@@ -224,14 +229,15 @@ function DonutChart({
 
 // Density Chart Component - Barras apiladas por tipología
 function DensityChart({ data }: { data: DensityData | null | undefined }) {
+  const { t } = useLanguage();
   if (!data || data.buckets.length === 0) {
     return (
       <div className="chart-coming-soon">
         <div className="chart-header">
-          <span className="chart-title">Densidad metafórica por Orden</span>
+          <span className="chart-title">{t.statistics?.densityTitle || "Densidad metafórica por orden"}</span>
         </div>
         <div className="chart-coming-soon-body">
-          <p>Sin datos de densidad disponibles</p>
+          <p>{t.statistics?.noDensityData || "Sin datos de densidad disponibles"}</p>
         </div>
       </div>
     );
@@ -249,18 +255,24 @@ function DensityChart({ data }: { data: DensityData | null | undefined }) {
 
   // Orden fijo de tipologías para consistencia visual
   const typologyOrder = ["Estructural", "Ontologica", "Orientacional", "OTRA"];
+  const typologyLabels: Record<string, string> = {
+    Estructural: t.map?.structuralFull || "Estructural",
+    Ontologica: t.map?.ontologicalFull || "Ontológica",
+    Orientacional: t.map?.orientationalFull || "Orientacional",
+    OTRA: t.statistics?.other || "Otra",
+  };
 
   return (
     <div className="density-chart">
       <div className="chart-header">
-        <span className="chart-title">Densidad metafórica por Orden</span>
-        <span className="chart-subtitle">{data.total_expressions} expresiones en {data.buckets.length} buckets</span>
+        <span className="chart-title">{t.statistics?.densityTitle || "Densidad metafórica por orden"}</span>
+        <span className="chart-subtitle">{data.total_expressions} {t.statistics?.expressions || "expresiones"} · {data.buckets.length} {t.statistics?.buckets || "intervalos"}</span>
       </div>
       <div className="density-bars">
         {data.buckets.map((bucket) => {
           const height = bucket.count > 0 ? (bucket.count / maxCount) * 150 : 2;
           return (
-            <div key={bucket.range} className="density-bar-wrapper" title={`${bucket.range}: ${bucket.count} expresiones`}>
+            <div key={bucket.range} className="density-bar-wrapper" title={`${bucket.range}: ${bucket.count} ${t.statistics?.expressions || "expresiones"}`}>
               <div className="density-bar-stack" style={{ height: `${Math.max(height, 2)}px` }}>
                 {typologyOrder.map((tipo) => {
                   const count = bucket.byTypology[tipo] || 0;
@@ -292,7 +304,7 @@ function DensityChart({ data }: { data: DensityData | null | undefined }) {
         {typologyOrder.map((tipo) => (
           <div key={tipo} className="legend-item">
             <span className="legend-color" style={{ backgroundColor: typologyColors[tipo] }} />
-            <span className="legend-label">{tipo}</span>
+            <span className="legend-label">{typologyLabels[tipo] || tipo}</span>
           </div>
         ))}
       </div>
@@ -302,14 +314,15 @@ function DensityChart({ data }: { data: DensityData | null | undefined }) {
 
 // Proximity Histogram - Más interpretable: muestra densidad móvil de metáforas
 function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
+  const { t } = useLanguage();
   if (!data || data.data.length === 0) {
     return (
       <div className="chart-coming-soon">
         <div className="chart-header">
-          <span className="chart-title">Distribución de metáforas en el texto</span>
+          <span className="chart-title">{t.statistics?.textDistribution || "Distribución de metáforas en el texto"}</span>
         </div>
         <div className="chart-coming-soon-body">
-          <p>Sin datos disponibles</p>
+          <p>{t.statistics?.noData || "Sin datos disponibles"}</p>
         </div>
       </div>
     );
@@ -344,19 +357,25 @@ function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
     "Orientacional": "#16a34a",
     "OTRA": "#6b7280"
   };
+  const typologyLabels: Record<string, string> = {
+    Estructural: t.map?.structuralFull || "Estructural",
+    Ontologica: t.map?.ontologicalFull || "Ontológica",
+    Orientacional: t.map?.orientationalFull || "Orientacional",
+    OTRA: t.statistics?.other || "Otra",
+  };
 
   return (
     <div className="proximity-histogram">
       <div className="chart-header">
-        <span className="chart-title">Distribución de metáforas en el texto</span>
-        <span className="chart-subtitle">{data.total_points.toLocaleString()} expresiones · ventana ±{data.range}</span>
+        <span className="chart-title">{t.statistics?.textDistribution || "Distribución de metáforas en el texto"}</span>
+        <span className="chart-subtitle">{data.total_points.toLocaleString()} {t.statistics?.expressions || "expresiones"} · {t.statistics?.window || "ventana"} ±{data.range}</span>
       </div>
       <div className="histogram-container">
         <div className="histogram-bars">
           {bins.map((bin, i) => {
             const height = bin.count > 0 ? (bin.count / maxCount) * 200 : 2;
             return (
-              <div key={i} className="histogram-bar-wrapper" title={`Posición ${bin.start}-${bin.end}: ${bin.count} expresiones`}>
+              <div key={i} className="histogram-bar-wrapper" title={`${t.statistics?.position || "Posición"} ${bin.start}-${bin.end}: ${bin.count} ${t.statistics?.expressions || "expresiones"}`}>
                 <div className="histogram-bar" style={{ height: `${Math.max(height, 2)}px` }}>
                   {Object.entries(bin.byTypology).map(([tipo, count]) => {
                     const segmentHeight = (count / bin.count) * height;
@@ -380,13 +399,13 @@ function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
         </div>
       </div>
       <div className="histogram-x-axis">
-        <span>← Posición en el texto (progresión del corpus) →</span>
+        <span>← {t.statistics?.textPosition || "Posición en el texto (progresión del corpus)"} →</span>
       </div>
       <div className="histogram-legend">
         {Object.entries(typologyColors).map(([tipo, color]) => (
           <div key={tipo} className="legend-item">
             <span className="legend-color" style={{ backgroundColor: color }} />
-            <span className="legend-label">{tipo}</span>
+            <span className="legend-label">{typologyLabels[tipo] || tipo}</span>
           </div>
         ))}
       </div>
@@ -396,14 +415,15 @@ function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
 
 // Heatmap Chart Component - Dominio fuente × meta
 function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
+  const { t } = useLanguage();
   if (!data || data.source_domains.length === 0 || data.target_domains.length === 0) {
     return (
       <div className="chart-coming-soon">
         <div className="chart-header">
-          <span className="chart-title">Heatmap fuente × meta</span>
+          <span className="chart-title">{t.statistics?.heatmapTitle || "Heatmap fuente × meta"}</span>
         </div>
         <div className="chart-coming-soon-body">
-          <p>Sin datos de matriz disponibles</p>
+          <p>{t.statistics?.noMatrixData || "Sin datos de matriz disponibles"}</p>
         </div>
       </div>
     );
@@ -439,14 +459,14 @@ function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
   return (
     <div className="heatmap-chart">
       <div className="chart-header">
-        <span className="chart-title">Co-ocurrencia dominios</span>
-        <span className="chart-subtitle">{sourcesWithData.length} fuente × {targetsWithData.length} meta (con datos)</span>
+        <span className="chart-title">{t.statistics?.cooccurrenceDomains || "Coocurrencia de dominios"}</span>
+        <span className="chart-subtitle">{sourcesWithData.length} {t.statistics?.sourceDomains || "fuente"} × {targetsWithData.length} {t.statistics?.targetDomains || "meta"} ({t.statistics?.withData || "con datos"})</span>
       </div>
       <div className="heatmap-matrix">
         {/* Header row with target domain labels */}
         <div className="heatmap-corner"></div>
         <div className="heatmap-x-header">
-          <span className="x-axis-title">Dominios Meta →</span>
+          <span className="x-axis-title">{t.statistics?.targetDomainsAxis || "Dominios meta"} →</span>
           <div className="heatmap-x-labels">
             {displayTargets.map((t, i) => (
               <span key={i} className="x-label" title={t}>{t.length > 10 ? t.slice(0, 10) + "…" : t}</span>
@@ -456,7 +476,7 @@ function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
         
         {/* Body with Y labels and grid */}
         <div className="heatmap-y-header">
-          <span className="y-axis-title">← Dominios Fuente</span>
+          <span className="y-axis-title">← {t.statistics?.sourceDomainsAxis || "Dominios fuente"}</span>
           <div className="heatmap-y-labels">
             {displaySources.map((s, i) => (
               <span key={i} className="y-label" title={s}>{s.length > 14 ? s.slice(0, 14) + "…" : s}</span>
@@ -475,7 +495,7 @@ function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
                     key={`${source}-${target}`}
                     className={`heatmap-cell ${count > 0 ? 'has-value' : ''}`}
                     style={{ backgroundColor: getColor(count) }}
-                    title={`${source} → ${target}: ${count} expresiones`}
+                    title={`${source} → ${target}: ${count} ${t.statistics?.expressions || "expresiones"}`}
                   >
                     {count > 0 && <span className="cell-count">{count}</span>}
                   </div>
@@ -494,6 +514,30 @@ function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
   );
 }
 
+function ExportableStatsCard({ children, filename }: { children: ReactNode; filename: string }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={cardRef} className="stats-card chart-download-wrap">
+      <button
+        className="chart-download-btn"
+        data-chart-download
+        onClick={() => {
+          if (cardRef.current) downloadHtmlAsSvg(cardRef.current, filename);
+        }}
+        title="SVG"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+        SVG
+      </button>
+      {children}
+    </div>
+  );
+}
+
+const TOP_LIMITS = [5, 10, 20] as const;
+type TopLimit = (typeof TOP_LIMITS)[number];
+
 // Main Statistics Dashboard Component
 export function StatisticsDashboard({
   corpus,
@@ -507,74 +551,85 @@ export function StatisticsDashboard({
   domainMatrix,
 }: StatisticsDashboardProps) {
   const { t } = useLanguage();
+  const [topLimit, setTopLimit] = useState<TopLimit>(10);
   const totalExpressions = stats?.estadisticas_agregadas?.numero_registros ?? 0;
 
   return (
     <div className="statistics-page">
       <header className="statistics-header">
-        <span className="section-tag">ANALÍTICA</span>
-        <h1>Estadísticas y gráficos</h1>
-        <p className="subtitle">
-          Ocho visualizaciones incluyendo densidad metafórica por Orden y scatter
-          de proximidad textual.
-        </p>
+        <span className="section-tag">{t.statistics?.eyebrow || "ANALÍTICA"}</span>
+        <h1>{t.statistics?.title || "Estadísticas y gráficos"}</h1>
+        <p className="subtitle">{t.statistics?.description || "Siete visualizaciones de la estructura metafórica del corpus."}</p>
       </header>
+
+      <div className="statistics-top-control">
+        <span>{t.statistics?.show || "Mostrar"}</span>
+        {TOP_LIMITS.map((limit) => (
+          <button
+            key={limit}
+            className={topLimit === limit ? "active" : ""}
+            onClick={() => setTopLimit(limit)}
+          >
+            Top {limit}
+          </button>
+        ))}
+      </div>
 
       <div className="statistics-grid">
         {/* Top Row: Source and Target Domains */}
         <div className="stats-row two-columns">
-          <div className="stats-card">
+          <ExportableStatsCard filename="top-source-domains.svg">
             <HorizontalBarChart
-              data={sourceDomains}
+              data={sourceDomains.slice(0, topLimit)}
               color={SOURCE_COLOR}
-              label="Top dominios fuente"
+              label={`Top ${topLimit} ${t.statistics?.sourceDomains || "dominios fuente"}`}
             />
-          </div>
-          <div className="stats-card">
+          </ExportableStatsCard>
+          <ExportableStatsCard filename="top-target-domains.svg">
             <HorizontalBarChart
-              data={targetDomains}
+              data={targetDomains.slice(0, topLimit)}
               color={TARGET_COLOR}
-              label="Top dominios meta"
+              label={`Top ${topLimit} ${t.statistics?.targetDomains || "dominios meta"}`}
             />
-          </div>
+          </ExportableStatsCard>
         </div>
 
         {/* Second Row: Top Metaphors and Typology */}
         <div className="stats-row two-columns">
-          <div className="stats-card">
+          <ExportableStatsCard filename="top-conceptual-metaphors.svg">
             <MetaphorBarChart
-              data={topMetaphors}
-              label="Top 10 metáforas conceptuales"
+              data={topMetaphors.slice(0, topLimit)}
+              label={`Top ${topLimit} ${t.statistics?.conceptualMetaphors || "metáforas conceptuales"}`}
             />
-          </div>
-          <div className="stats-card">
+          </ExportableStatsCard>
+          <ExportableStatsCard filename="typology-distribution.svg">
             <DonutChart
               data={typologyDistribution}
               total={totalExpressions}
-              label="Tipología"
+              label={t.statistics?.typology || "Tipología"}
             />
-          </div>
+          </ExportableStatsCard>
         </div>
 
         {/* Third Row: Density Chart (full width) */}
         <div className="stats-row full-width">
-          <div className="stats-card">
+          <ExportableStatsCard filename="metaphorical-density.svg">
             <DensityChart data={densityData} />
-          </div>
+          </ExportableStatsCard>
         </div>
 
         {/* Fourth Row: Scatter Chart (full width) */}
         <div className="stats-row full-width">
-          <div className="stats-card">
+          <ExportableStatsCard filename="metaphor-distribution.svg">
             <ScatterChart data={proximityData} />
-          </div>
+          </ExportableStatsCard>
         </div>
 
         {/* Fifth Row: Heatmap Chart (full width) */}
         <div className="stats-row full-width">
-          <div className="stats-card">
+          <ExportableStatsCard filename="domain-cooccurrence.svg">
             <HeatmapChart data={domainMatrix} />
-          </div>
+          </ExportableStatsCard>
         </div>
       </div>
     </div>
