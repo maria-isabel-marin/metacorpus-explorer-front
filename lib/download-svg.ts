@@ -37,6 +37,42 @@ export function downloadSvgElement(
   URL.revokeObjectURL(url);
 }
 
+export function downloadSvgMarkup(svgData: string, filename: string) {
+  const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename.endsWith(".svg") ? filename : `${filename}.svg`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadHtmlAsSvg(element: HTMLElement, filename: string) {
+  const width = Math.max(element.scrollWidth, element.clientWidth, 1);
+  const height = Math.max(element.scrollHeight, element.clientHeight, 1);
+  const clone = element.cloneNode(true) as HTMLElement;
+  const sourceElements = [element, ...Array.from(element.querySelectorAll<HTMLElement>("*"))];
+  const clonedElements = [clone, ...Array.from(clone.querySelectorAll<HTMLElement>("*"))];
+
+  sourceElements.forEach((source, index) => {
+    const target = clonedElements[index];
+    if (!target) return;
+    const styles = getComputedStyle(source);
+    for (let propertyIndex = 0; propertyIndex < styles.length; propertyIndex++) {
+      const property = styles.item(propertyIndex);
+      target.style.setProperty(property, styles.getPropertyValue(property), styles.getPropertyPriority(property));
+    }
+  });
+
+  clone.querySelectorAll("[data-chart-download]").forEach((button) => button.remove());
+  clone.style.margin = "0";
+  clone.style.width = `${width}px`;
+  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${clone.outerHTML}</foreignObject></svg>`;
+  downloadSvgMarkup(svg, filename);
+}
+
 /**
  * Export a canvas element (e.g. vis-network) as PNG.
  */
