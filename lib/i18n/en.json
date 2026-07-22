@@ -203,6 +203,9 @@
     "orderEnd": "end",
     "lema": "lemma"
   },
+  "about": {
+    "citationUnavailable": "Citation information is not available at this time. If you need to cite this corpus, please report it to the support team."
+  },
   "language": {
     "label": "Language",
     "es": "Español",

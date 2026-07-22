@@ -203,6 +203,9 @@
     "orderEnd": "fin",
     "lema": "lema"
   },
+  "about": {
+    "citationUnavailable": "La información de citación no está disponible en este momento. Si necesita citar este corpus, por favor repórtelo al equipo de soporte."
+  },
   "language": {
     "label": "Idioma",
     "es": "Español",
