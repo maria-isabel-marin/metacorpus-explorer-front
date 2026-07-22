@@ -2,11 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
+    const backend =
+      process.env.API_URL_INTERNAL ?? "http://localhost:8080";
     return [
       {
         source: "/api/:path*",
-        destination:
-          "http://metacorpus-explorer-back.railway.internal:8080/api/:path*",
+        destination: `${backend}/api/:path*`,
       },
     ];
   },
