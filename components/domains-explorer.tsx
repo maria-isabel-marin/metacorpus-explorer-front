@@ -33,14 +33,25 @@ export function DomainsExplorer({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const filteredDomains = useMemo(() => {
-    if (!filterText.trim()) return domains;
-    const search = filterText.toLowerCase();
-    return domains.filter(
-      (d) =>
-        d.nombre.toLowerCase().includes(search) ||
-        (d.macrodominio && d.macrodominio.toLowerCase().includes(search))
-    );
-  }, [domains, filterText]);
+    let result = domains;
+
+    // Filtrar por tipo de pestaña activa
+    if (activeTab === "fuente" || activeTab === "meta") {
+      result = result.filter((d) => d.tipo === activeTab);
+    }
+
+    // Filtrar por texto de búsqueda
+    if (filterText.trim()) {
+      const search = filterText.toLowerCase();
+      result = result.filter(
+        (d) =>
+          d.nombre.toLowerCase().includes(search) ||
+          (d.macrodominio && d.macrodominio.toLowerCase().includes(search))
+      );
+    }
+
+    return result;
+  }, [domains, filterText, activeTab]);
 
   const toggleNode = (id: string) => {
     setExpandedNodes((prev) => {

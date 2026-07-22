@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { CorpusSummary } from "@/lib/corpora";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { SankeyChart } from "./sankey-chart";
+import { NetworkGraph } from "./network-graph";
 
 type MetaphorMapProps = {
   corpus: CorpusSummary;
@@ -18,7 +20,7 @@ type MetaphorMapProps = {
   activeTypology: string;
 };
 
-type ViewType = "radial" | "chord" | "force";
+type TopView = "map" | "sankey" | "graph";
 
 const typologyColors: Record<string, string> = {
   "ESTRUCTURAL": "#64748b", // slate
@@ -29,7 +31,7 @@ const typologyColors: Record<string, string> = {
 
 export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: MetaphorMapProps) {
   const { t } = useLanguage();
-  const [viewType, setViewType] = useState<ViewType>("radial");
+  const [topView, setTopView] = useState<TopView>("map");
   const [hoveredDomain, setHoveredDomain] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -201,25 +203,38 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           {t.map?.title || "Mapa de"} <em>metáforas</em>
         </h1>
         <p className="map-description">
-          {t.map?.description ||
-            "Conexiones dominio-fuente ↔ dominio-meta. Inspirado en Mapping Metaphor (Glasgow). Pasa el cursor sobre un dominio para resaltar sus conexiones."}
+          {topView === "sankey"
+            ? (t.map?.sankeyDescription || "Flujo de dominio fuente a dominio meta.")
+            : (t.map?.description || "Conexiones dominio-fuente ↔ dominio-meta.")}
         </p>
       </header>
 
-      {/* Controls */}
-      <div className="map-controls">
-        <div className="map-view-tabs">
-          {["radial", "chord", "force"].map((view) => (
-            <button
-              key={view}
-              className={`map-view-tab ${viewType === view ? "active" : ""}`}
-              onClick={() => setViewType(view as ViewType)}
-            >
-              {view.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      {/* Top-level view tabs */}
+      <div className="map-top-tabs">
+        <button
+          className={`map-top-tab ${topView === "map" ? "active" : ""}`}
+          onClick={() => setTopView("map")}
+        >
+          {t.map?.viewMap || "Mapa radial"}
+        </button>
+        <button
+          className={`map-top-tab ${topView === "sankey" ? "active" : ""}`}
+          onClick={() => setTopView("sankey")}
+        >
+          {t.map?.viewSankey || "Sankey"}
+        </button>
+        <button
+          className={`map-top-tab ${topView === "graph" ? "active" : ""}`}
+          onClick={() => setTopView("graph")}
+        >
+          {t.map?.viewGraph || "Grafo dirigido"}
+        </button>
+      </div>
 
+      {topView === "sankey" && <SankeyChart metaphors={metaphors} />}
+      {topView === "graph" && <NetworkGraph metaphors={metaphors} />}
+
+      {topView === "map" && <div className="map-controls">
         <div className="map-filter-tabs">
           {[
             { key: "todas", label: t.map?.all || "TODAS" },
@@ -262,10 +277,9 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           </svg>
           SVG
         </button>
-      </div>
+      </div>}
 
-      {/* Visualization */}
-      <div className="map-visualization">
+      {topView === "map" && <div className="map-visualization">
         <svg
           ref={svgRef}
           className="map-svg"
@@ -412,7 +426,7 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </main>
   );
 }

@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 type MetaphorTableProps = {
   metaphors: ConceptualMetaphor[];
+  corpusSlug: string;
 };
 
-export function MetaphorTable({ metaphors }: MetaphorTableProps) {
+export function MetaphorTable({ metaphors, corpusSlug }: MetaphorTableProps) {
   const { t } = useLanguage();
 
   if (metaphors.length === 0) {
@@ -34,7 +36,12 @@ export function MetaphorTable({ metaphors }: MetaphorTableProps) {
           {metaphors.map((metaphor) => (
             <tr key={metaphor.id} className="metaphor-row">
               <td className="metaphor-cell-formula">
-                <span className="metaphor-formula">{metaphor.formula}</span>
+                <Link
+                  href={`/corpus/${corpusSlug}/metaphors/${metaphor.id}`}
+                  className="metaphor-formula-link"
+                >
+                  <span className="metaphor-formula">{metaphor.formula}</span>
+                </Link>
               </td>
               <td className="metaphor-cell-domain">
                 <span className="domain-badge source">{metaphor.sourceDomain}</span>
@@ -48,7 +55,12 @@ export function MetaphorTable({ metaphors }: MetaphorTableProps) {
                 </span>
               </td>
               <td className="metaphor-cell-expressions">
-                <span className="expressions-count">{metaphor.expressions}</span>
+                <Link
+                  href={`/corpus/${corpusSlug}/metaphors/${metaphor.id}`}
+                  className="expressions-count-link"
+                >
+                  <span className="expressions-count">{metaphor.expressions}</span>
+                </Link>
               </td>
             </tr>
           ))}

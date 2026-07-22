@@ -15,7 +15,7 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
   const { slug } = await params;
   const { tipo } = await searchParams;
   
-  const corpus = getCorpusBySlug(slug);
+  const corpus = await getCorpusBySlug(slug);
   if (!corpus) {
     return notFound();
   }

@@ -1,3 +1,6 @@
+import type { ApiCorpusListItem } from "@/lib/api";
+import { fetchAllCorpora, fetchCorpusStats } from "@/lib/api";
+
 export type CorpusSummary = {
   slug: string;
   name: string;
@@ -16,63 +19,89 @@ export type CorpusSummary = {
   highlightedTopic: string;
 };
 
-export const corpusCatalog: CorpusSummary[] = [
-  {
-    slug: "tdg-betancur-villegas-2025",
-    name: "Tomo Mi cuerpo es la verdad — Informe Final CEV",
-    shortCode: "Corpus · 01",
-    description:
-      "Corpus resultante del trabajo de grado de pregrado \"Conceptualización de las mujeres y del conflicto armado colombiano a través de las metáforas conceptuales en el Informe Final de la Comisión de la Verdad\".",
+export function apiCorpusToSummary(item: ApiCorpusListItem, index: number): CorpusSummary {
+  return {
+    slug: item.slug,
+    name: item.nombre,
+    shortCode: `Corpus · ${String(index + 1).padStart(2, "0")}`,
+    description: item.descripcion ?? "",
+    expressions: item.numero_registros,
+    metaphors: 0,
+    sourceDomains: 0,
+    targetDomains: 0,
+    textualSources: 0,
+    typologies: 0,
+    language: item.idioma.toUpperCase(),
+    version: item.version,
+    license: item.licencia ?? "",
+    publicationDate: item.fecha_publicacion ?? new Date().toISOString().slice(0, 10),
+    highlightedTopic: "",
+  };
+}
+
+export function buildCorpusSummaryFallback(slug: string): CorpusSummary {
+  return {
+    slug,
+    name: slug,
+    shortCode: "Corpus",
+    description: "",
     expressions: 0,
     metaphors: 0,
     sourceDomains: 0,
     targetDomains: 0,
     textualSources: 0,
     typologies: 0,
-    language: "ES",
-    version: "1.0.0",
-    license: "CC-BY-4.0",
-    publicationDate: "2025-01-01",
-    highlightedTopic: "Mujeres, conflicto armado y verdad",
-  },
-  {
-    slug: "phdthesis-marinmorales-2026",
-    name: "Informe Final de la Comisión de la Verdad de Colombia",
-    shortCode: "Corpus · 02",
-    description:
-      "Corpus resultante de la Tesis Doctoral \"Can an AI-enabled system help us understand how cultural narratives are configured, and how do they prime social mobilization?\".",
-    expressions: 0,
-    metaphors: 0,
-    sourceDomains: 0,
-    targetDomains: 0,
-    textualSources: 0,
-    typologies: 0,
-    language: "ES",
-    version: "1.0.0",
-    license: "CC-BY-4.0",
-    publicationDate: "2026-01-01",
-    highlightedTopic: "Narrativas culturales y movilización social",
-  },
-];
-
-export function getAllCorpora() {
-  return corpusCatalog;
+    language: "",
+    version: "",
+    license: "",
+    publicationDate: new Date().toISOString().slice(0, 10),
+    highlightedTopic: "",
+  };
 }
 
-export function getCorpusBySlug(slug: string) {
-  return corpusCatalog.find((corpus) => corpus.slug === slug);
-}
-
-export function getCorpusOrThrow(slug: string) {
-  const corpus = getCorpusBySlug(slug);
-
-  if (!corpus) {
-    throw new Error(`Corpus not found for slug: ${slug}`);
+export async function getAllCorpora(): Promise<CorpusSummary[]> {
+  try {
+    const items = await fetchAllCorpora();
+    return items.map((item, index) => apiCorpusToSummary(item, index));
+  } catch {
+    return [];
   }
-
-  return corpus;
 }
 
-export function getCorpusCount() {
-  return corpusCatalog.length;
+export async function getCorpusBySlug(slug: string, index?: number): Promise<CorpusSummary | null> {
+  try {
+    const stats = await fetchCorpusStats(slug);
+    const shortCode = index !== undefined
+      ? `Corpus · ${String(index + 1).padStart(2, "0")}`
+      : "Corpus";
+    const summary: CorpusSummary = {
+      slug: stats.slug,
+      name: stats.nombre,
+      shortCode,
+      description: stats.descripcion ?? "",
+      expressions: stats.estadisticas_agregadas.numero_registros,
+      metaphors: stats.estadisticas_agregadas.metaforas_conceptuales,
+      sourceDomains: stats.estadisticas_agregadas.dominios_por_tipo?.FUENTE ?? 0,
+      targetDomains: stats.estadisticas_agregadas.dominios_por_tipo?.META ?? 0,
+      textualSources: stats.estadisticas_agregadas.fuentes_textuales,
+      typologies: stats.estadisticas_agregadas.categorias_gramaticales,
+      language: stats.idioma.toUpperCase(),
+      version: stats.version,
+      license: stats.licencia ?? "",
+      publicationDate: stats.fecha_publicacion ?? new Date().toISOString().slice(0, 10),
+      highlightedTopic: "",
+    };
+    return summary;
+  } catch {
+    return null;
+  }
+}
+
+export async function getCorpusCount(): Promise<number> {
+  try {
+    const items = await fetchAllCorpora();
+    return items.length;
+  } catch {
+    return 0;
+  }
 }

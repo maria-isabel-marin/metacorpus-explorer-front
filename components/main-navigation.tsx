@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import type { CorpusSummary } from "@/lib/corpora";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -19,7 +20,7 @@ const navItems: { key: NavKey; href: string }[] = [
   { key: "domains", href: "/domains" },
   { key: "concordance", href: "/concordance" },
   { key: "map", href: "/map" },
-  { key: "stats", href: "/stats" },
+  { key: "stats", href: "/statistics" },
   { key: "about", href: "/about" },
   { key: "api", href: "/api" },
 ];
@@ -28,6 +29,7 @@ export function MainNavigation({ corpus }: MainNavigationProps) {
   const pathname = usePathname();
   const basePath = `/corpus/${corpus.slug}`;
   const { t } = useLanguage();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="main-navigation">
@@ -42,7 +44,7 @@ export function MainNavigation({ corpus }: MainNavigationProps) {
           </Link>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Navigation Menu - desktop */}
         <nav className="nav-menu">
           {navItems.map((item) => {
             const itemPath = `${basePath}${item.href}`;
@@ -84,8 +86,47 @@ export function MainNavigation({ corpus }: MainNavigationProps) {
               </svg>
             </Link>
           </div>
+
+          {/* Hamburger button - mobile only */}
+          <button
+            className="nav-hamburger"
+            aria-label="Abrir menú"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((prev) => !prev)}
+          >
+            <span className={`hamburger-bar ${mobileOpen ? "open" : ""}`} />
+            <span className={`hamburger-bar ${mobileOpen ? "open" : ""}`} />
+            <span className={`hamburger-bar ${mobileOpen ? "open" : ""}`} />
+          </button>
         </div>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {mobileOpen && (
+        <nav className="nav-mobile-menu">
+          <div className="nav-mobile-corpus">
+            <span className="nav-mobile-corpus-name">{corpus.name}</span>
+            <Link href="/" className="nav-mobile-change" onClick={() => setMobileOpen(false)}>
+              {t.nav.changeCorpus}
+            </Link>
+          </div>
+          <div className="nav-mobile-divider" />
+          {navItems.map((item) => {
+            const itemPath = `${basePath}${item.href}`;
+            const isActive = pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+            return (
+              <Link
+                key={item.href}
+                href={itemPath}
+                className={`nav-mobile-link ${isActive ? "nav-link-active" : ""}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                {t.nav[item.key]}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Separator line */}
       <div className="nav-separator" />
