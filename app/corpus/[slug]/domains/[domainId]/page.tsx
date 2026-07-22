@@ -44,17 +44,15 @@ export default async function DomainDetailPage({ params }: DomainDetailPageProps
   let targetMetaphors: ReturnType<typeof mapApiMetaphorToConceptualMetaphor>[] = [];
 
   try {
-    const allData = await fetchMetaphors(slug, { limit: 500 });
-    const allMetaphors = allData.items.map(mapApiMetaphorToConceptualMetaphor);
+    const [sourceData, targetData] = await Promise.all([
+      fetchMetaphors(slug, { limit: 10, dominio_fuente: domainName }),
+      fetchMetaphors(slug, { limit: 10, dominio_meta: domainName }),
+    ]);
 
-    sourceMetaphors = allMetaphors.filter(
-      m => m.sourceDomain?.toUpperCase() === domainName.toUpperCase()
-    );
-    targetMetaphors = allMetaphors.filter(
-      m => m.targetDomain?.toUpperCase() === domainName.toUpperCase()
-    );
+    sourceMetaphors = sourceData.items.map(mapApiMetaphorToConceptualMetaphor);
+    targetMetaphors = targetData.items.map(mapApiMetaphorToConceptualMetaphor);
 
-    metaphorCount = sourceMetaphors.length + targetMetaphors.length;
+    metaphorCount = sourceData.total + targetData.total;
     if (expressionCount === 0) {
       expressionCount = [...sourceMetaphors, ...targetMetaphors].reduce(
         (sum, m) => sum + m.expressions, 0

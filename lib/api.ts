@@ -260,8 +260,9 @@ export type TreeNode = {
 export async function fetchFilterOptions(
   slug: string
 ): Promise<ApiFilterOptions> {
-  const [metaphorsData, typologiesRaw, gramCatsRaw] = await Promise.all([
-    fetchMetaphors(slug, { limit: 500 }),
+  const [sourceDomainsData, targetDomainsData, typologiesRaw, gramCatsRaw] = await Promise.all([
+    fetchDomains(slug, "fuente"),
+    fetchDomains(slug, "meta"),
     apiFetch<{ data: { tipologia: string; count: number }[] }>(
       `/api/v1/corpora/${slug}/stats/typologies`
     ).catch(() => ({ data: [] })),
@@ -269,14 +270,6 @@ export async function fetchFilterOptions(
       `/api/v1/corpora/${slug}/grammatical-categories`
     ).catch(() => ({ data: [] })),
   ]);
-
-  const sourceDomainSet = new Set<string>();
-  const targetDomainSet = new Set<string>();
-
-  for (const m of metaphorsData.items) {
-    if (m.dominio_fuente) sourceDomainSet.add(m.dominio_fuente.nombre);
-    if (m.dominio_meta) targetDomainSet.add(m.dominio_meta.nombre);
-  }
 
   const typologies = (typologiesRaw.data ?? []).map((t) => ({
     name: t.tipologia,
@@ -290,8 +283,8 @@ export async function fetchFilterOptions(
 
   return {
     typologies,
-    sourceDomains: [...sourceDomainSet].sort(),
-    targetDomains: [...targetDomainSet].sort(),
+    sourceDomains: sourceDomainsData.items.map((domain) => domain.nombre).sort(),
+    targetDomains: targetDomainsData.items.map((domain) => domain.nombre).sort(),
     grammaticalCategories,
   };
 }
