@@ -2237,6 +2237,54 @@ textarea {
   margin: 0;
 }
 
+.sankey-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.sankey-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.sankey-color-control input {
+  width: 22px;
+  height: 22px;
+  padding: 1px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sankey-color-control select {
+  min-width: 110px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
 .sankey-svg-container {
   width: 100%;
 }
@@ -4341,6 +4389,27 @@ textarea {
   color: #fff;
 }
 
+.statistics-custom-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statistics-top-control .statistics-custom-top span {
+  margin: 0 0 0 4px;
+}
+
+.statistics-custom-top input {
+  width: 52px;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .statistics-grid {
   display: flex;
   flex-direction: column;
@@ -4353,7 +4422,14 @@ textarea {
 }
 
 .stats-row.two-columns {
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stats-row.two-columns > .stats-card {
+  width: calc(50% - 12px);
+  min-width: calc(50% - 12px);
+  max-width: 100%;
 }
 
 .stats-row.full-width {
@@ -4361,8 +4437,9 @@ textarea {
 }
 
 @media (max-width: 1024px) {
-  .stats-row.two-columns {
-    grid-template-columns: 1fr;
+  .stats-row.two-columns > .stats-card {
+    width: 100%;
+    min-width: 100%;
   }
 }
 
@@ -4372,6 +4449,8 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
+  resize: horizontal;
+  overflow: hidden;
 }
 
 .stats-card .chart-header {
@@ -4433,7 +4512,7 @@ textarea {
 
 .bar-item {
   display: grid;
-  grid-template-columns: 120px 1fr 40px;
+  grid-template-columns: minmax(120px, 35%) 1fr 40px;
   align-items: center;
   gap: 12px;
 }

@@ -51,14 +51,23 @@ type StatisticsDashboardProps = {
 };
 
 // Colors for charts
-const SOURCE_COLOR = "#3b5998";
-const TARGET_COLOR = "#a0522d";
-const TYPOLOGY_COLORS = {
-  RETRA: "#3b5998",
-  PEDAL: "#a0522d",
-  ORIG: "#4a7c59",
-  RECI: "#d4a574",
+const DEFAULT_SOURCE_COLOR = "#3b5998";
+const DEFAULT_TARGET_COLOR = "#a0522d";
+const DEFAULT_DENSITY_TYPOLOGY_COLORS: Record<string, string> = {
+  Estructural: "#2563eb",
+  Ontologica: "#dc2626",
+  Orientacional: "#16a34a",
+  OTRA: "#6b7280",
 };
+const DEFAULT_PALETTE = ["#3b5998", "#a0522d", "#4a7c59", "#d4a574", "#6b7280", "#9333ea", "#0891b2", "#dc2626"];
+const DEFAULT_HEATMAP_COLOR = "#2563eb";
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace("#", "");
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const num = parseInt(full, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
 
 // Horizontal Bar Chart Component
 function HorizontalBarChart({
@@ -106,9 +115,13 @@ function HorizontalBarChart({
 function MetaphorBarChart({
   data,
   label,
+  sourceColor,
+  targetColor,
 }: {
   data: MetaphorStat[];
   label: string;
+  sourceColor: string;
+  targetColor: string;
 }) {
   const { t } = useLanguage();
   const maxValue = Math.max(...data.map((d) => d.total_expresiones), 1);
@@ -124,11 +137,11 @@ function MetaphorBarChart({
           // Determine color based on domain types
           const hasSource = item.dominio_fuente?.nombre;
           const hasTarget = item.dominio_meta?.nombre;
-          let barColor = SOURCE_COLOR;
+          let barColor = sourceColor;
           if (hasSource && hasTarget) {
-            barColor = TARGET_COLOR;
+            barColor = targetColor;
           } else if (!hasSource && hasTarget) {
-            barColor = TARGET_COLOR;
+            barColor = targetColor;
           }
 
           return (
@@ -154,17 +167,17 @@ function MetaphorBarChart({
   );
 }
 
-const PALETTE = ["#3b5998", "#a0522d", "#4a7c59", "#d4a574", "#6b7280", "#9333ea", "#0891b2", "#dc2626"];
-
 // Donut Chart Component for Typology — datos reales
 function DonutChart({
   data,
   total,
   label,
+  palette,
 }: {
   data: TypologyStat[];
   total: number;
   label: string;
+  palette: string[];
 }) {
   const { t } = useLanguage();
   if (data.length === 0) {
@@ -179,7 +192,7 @@ function DonutChart({
     );
   }
 
-  const colored = data.map((d, i) => ({ ...d, color: PALETTE[i % PALETTE.length] }));
+  const colored = data.map((d, i) => ({ ...d, color: palette[i % palette.length] }));
   const totalValue = colored.reduce((s, d) => s + d.total, 0);
   let currentAngle = 0;
 
@@ -228,7 +241,7 @@ function DonutChart({
 }
 
 // Density Chart Component - Barras apiladas por tipología
-function DensityChart({ data }: { data: DensityData | null | undefined }) {
+function DensityChart({ data, typologyColors }: { data: DensityData | null | undefined; typologyColors: Record<string, string> }) {
   const { t } = useLanguage();
   if (!data || data.buckets.length === 0) {
     return (
@@ -244,14 +257,6 @@ function DensityChart({ data }: { data: DensityData | null | undefined }) {
   }
 
   const maxCount = Math.max(...data.buckets.map(b => b.count), 1);
-  
-  // Colores actualizados con mejor contraste
-  const typologyColors: Record<string, string> = {
-    "Estructural": "#2563eb",    // Azul más brillante
-    "Ontologica": "#dc2626",     // Rojo más brillante  
-    "Orientacional": "#16a34a",  // Verde más brillante
-    "OTRA": "#6b7280"            // Gris neutro
-  };
 
   // Orden fijo de tipologías para consistencia visual
   const typologyOrder = ["Estructural", "Ontologica", "Orientacional", "OTRA"];
@@ -313,7 +318,7 @@ function DensityChart({ data }: { data: DensityData | null | undefined }) {
 }
 
 // Proximity Histogram - Más interpretable: muestra densidad móvil de metáforas
-function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
+function ScatterChart({ data, typologyColors }: { data: ProximityData | null | undefined; typologyColors: Record<string, string> }) {
   const { t } = useLanguage();
   if (!data || data.data.length === 0) {
     return (
@@ -350,13 +355,7 @@ function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
   }
   
   const maxCount = Math.max(...bins.map(b => b.count), 1);
-  
-  const typologyColors: Record<string, string> = {
-    "Estructural": "#2563eb",
-    "Ontologica": "#dc2626",
-    "Orientacional": "#16a34a",
-    "OTRA": "#6b7280"
-  };
+
   const typologyLabels: Record<string, string> = {
     Estructural: t.map?.structuralFull || "Estructural",
     Ontologica: t.map?.ontologicalFull || "Ontológica",
@@ -414,7 +413,7 @@ function ScatterChart({ data }: { data: ProximityData | null | undefined }) {
 }
 
 // Heatmap Chart Component - Dominio fuente × meta
-function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
+function HeatmapChart({ data, baseColor }: { data: DomainMatrixData | null | undefined; baseColor: string }) {
   const { t } = useLanguage();
   if (!data || data.source_domains.length === 0 || data.target_domains.length === 0) {
     return (
@@ -449,11 +448,11 @@ function HeatmapChart({ data }: { data: DomainMatrixData | null | undefined }) {
     1
   );
 
+  const { r, g, b } = hexToRgb(baseColor);
   const getColor = (count: number) => {
     if (count === 0) return "#f1f5f9"; // Gris muy claro para vacíos
     const intensity = count / maxCount;
-    // Escala de azul
-    return `rgba(37, 99, 235, ${0.2 + intensity * 0.8})`;
+    return `rgba(${r}, ${g}, ${b}, ${0.2 + intensity * 0.8})`;
   };
 
   return (
@@ -536,7 +535,6 @@ function ExportableStatsCard({ children, filename }: { children: ReactNode; file
 }
 
 const TOP_LIMITS = [5, 10, 20] as const;
-type TopLimit = (typeof TOP_LIMITS)[number];
 
 // Main Statistics Dashboard Component
 export function StatisticsDashboard({
@@ -551,8 +549,35 @@ export function StatisticsDashboard({
   domainMatrix,
 }: StatisticsDashboardProps) {
   const { t } = useLanguage();
-  const [topLimit, setTopLimit] = useState<TopLimit>(10);
+  const [topLimit, setTopLimit] = useState(10);
   const totalExpressions = stats?.estadisticas_agregadas?.numero_registros ?? 0;
+  const [sourceColor, setSourceColor] = useState(DEFAULT_SOURCE_COLOR);
+  const [targetColor, setTargetColor] = useState(DEFAULT_TARGET_COLOR);
+  const [typologyColors, setTypologyColors] = useState<Record<string, string>>(DEFAULT_DENSITY_TYPOLOGY_COLORS);
+  const [palette, setPalette] = useState<string[]>(DEFAULT_PALETTE);
+  const [heatmapColor, setHeatmapColor] = useState(DEFAULT_HEATMAP_COLOR);
+
+  const setTypologyColor = (key: string, color: string) => {
+    setTypologyColors((prev) => ({ ...prev, [key]: color }));
+  };
+
+  const setPaletteColor = (index: number, color: string) => {
+    setPalette((prev) => prev.map((c, i) => (i === index ? color : c)));
+  };
+
+  const typologyLabels: Record<string, string> = {
+    Estructural: t.map?.structuralFull || "Estructural",
+    Ontologica: t.map?.ontologicalFull || "Ontológica",
+    Orientacional: t.map?.orientationalFull || "Orientacional",
+    OTRA: t.statistics?.other || "Otra",
+  };
+
+  const handleCustomTopLimit = (value: string) => {
+    const limit = Number(value);
+    if (Number.isSafeInteger(limit) && limit > 0) {
+      setTopLimit(limit);
+    }
+  };
 
   return (
     <div className="statistics-page">
@@ -573,6 +598,52 @@ export function StatisticsDashboard({
             Top {limit}
           </button>
         ))}
+        <label className="statistics-custom-top">
+          <span>{t.statistics?.customTop || "Top personalizado"}</span>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={topLimit}
+            onChange={(event) => handleCustomTopLimit(event.target.value)}
+            aria-label={t.statistics?.customTop || "Top personalizado"}
+          />
+        </label>
+      </div>
+
+      <div className="sankey-color-controls">
+        <label className="sankey-color-control">
+          <span>{t.map?.sourceDomain || "Fuente"}</span>
+          <input type="color" value={sourceColor} onChange={(event) => setSourceColor(event.target.value)} />
+        </label>
+        <label className="sankey-color-control">
+          <span>{t.map?.targetDomain || "Meta"}</span>
+          <input type="color" value={targetColor} onChange={(event) => setTargetColor(event.target.value)} />
+        </label>
+        {Object.entries(typologyColors).map(([key, color]) => (
+          <label key={key} className="sankey-color-control">
+            <span>{typologyLabels[key] || key}</span>
+            <input
+              type="color"
+              value={color}
+              onChange={(event) => setTypologyColor(key, event.target.value)}
+            />
+          </label>
+        ))}
+        <label className="sankey-color-control">
+          <span>Heatmap</span>
+          <input type="color" value={heatmapColor} onChange={(event) => setHeatmapColor(event.target.value)} />
+        </label>
+        {palette.map((color, index) => (
+          <label key={index} className="sankey-color-control">
+            <span>{t.statistics?.typology || "Tipología"} {index + 1}</span>
+            <input
+              type="color"
+              value={color}
+              onChange={(event) => setPaletteColor(index, event.target.value)}
+            />
+          </label>
+        ))}
       </div>
 
       <div className="statistics-grid">
@@ -581,14 +652,14 @@ export function StatisticsDashboard({
           <ExportableStatsCard filename="top-source-domains.svg">
             <HorizontalBarChart
               data={sourceDomains.slice(0, topLimit)}
-              color={SOURCE_COLOR}
+              color={sourceColor}
               label={`Top ${topLimit} ${t.statistics?.sourceDomains || "dominios fuente"}`}
             />
           </ExportableStatsCard>
           <ExportableStatsCard filename="top-target-domains.svg">
             <HorizontalBarChart
               data={targetDomains.slice(0, topLimit)}
-              color={TARGET_COLOR}
+              color={targetColor}
               label={`Top ${topLimit} ${t.statistics?.targetDomains || "dominios meta"}`}
             />
           </ExportableStatsCard>
@@ -600,6 +671,8 @@ export function StatisticsDashboard({
             <MetaphorBarChart
               data={topMetaphors.slice(0, topLimit)}
               label={`Top ${topLimit} ${t.statistics?.conceptualMetaphors || "metáforas conceptuales"}`}
+              sourceColor={sourceColor}
+              targetColor={targetColor}
             />
           </ExportableStatsCard>
           <ExportableStatsCard filename="typology-distribution.svg">
@@ -607,6 +680,7 @@ export function StatisticsDashboard({
               data={typologyDistribution}
               total={totalExpressions}
               label={t.statistics?.typology || "Tipología"}
+              palette={palette}
             />
           </ExportableStatsCard>
         </div>
@@ -614,21 +688,21 @@ export function StatisticsDashboard({
         {/* Third Row: Density Chart (full width) */}
         <div className="stats-row full-width">
           <ExportableStatsCard filename="metaphorical-density.svg">
-            <DensityChart data={densityData} />
+            <DensityChart data={densityData} typologyColors={typologyColors} />
           </ExportableStatsCard>
         </div>
 
         {/* Fourth Row: Scatter Chart (full width) */}
         <div className="stats-row full-width">
           <ExportableStatsCard filename="metaphor-distribution.svg">
-            <ScatterChart data={proximityData} />
+            <ScatterChart data={proximityData} typologyColors={typologyColors} />
           </ExportableStatsCard>
         </div>
 
         {/* Fifth Row: Heatmap Chart (full width) */}
         <div className="stats-row full-width">
           <ExportableStatsCard filename="domain-cooccurrence.svg">
-            <HeatmapChart data={domainMatrix} />
+            <HeatmapChart data={domainMatrix} baseColor={heatmapColor} />
           </ExportableStatsCard>
         </div>
       </div>
