@@ -147,7 +147,12 @@
     "source": "Source",
     "target": "Target",
     "connectionsOf": "Connections for",
-    "connections": "connections"
+    "connections": "connections",
+    "arrowheads": "Arrowheads",
+    "noArrowhead": "No arrowhead",
+    "withArrowhead": "With arrowhead",
+    "arrows": "Arrows",
+    "connectionColor": "Connections"
   },
   "statistics": {
     "eyebrow": "ANALYTICS",

@@ -2809,6 +2809,43 @@ textarea {
   cursor: pointer;
 }
 
+.map-arrow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.map-arrow-toggle span {
+  margin: 0 6px 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.map-arrow-toggle button {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.map-arrow-toggle button:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.map-arrow-toggle button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
 .map-macro-legend {
   display: flex;
   gap: 16px;

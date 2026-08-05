@@ -39,6 +39,8 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
   const [minExpressions, setMinExpressions] = useState(0);
   const [sourceColor, setSourceColor] = useState("#3b82f6");
   const [targetColor, setTargetColor] = useState("#f59e0b");
+  const [connectionColor, setConnectionColor] = useState("#334155");
+  const [showArrows, setShowArrows] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Extract unique domains and build connections - LIMIT to top domains
@@ -182,6 +184,8 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
     if (svgRef.current) downloadSvgElement(svgRef.current, `metaphor-map-${corpus.slug}.svg`);
   };
 
+  const getNodeRadius = (count: number) => 6 + Math.log(count + 1);
+
   const truncateDomainName = (name: string, maxLen = 18) => {
     if (name.length <= maxLen) return name;
     // Try to break at word boundary
@@ -277,6 +281,22 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           ))}
         </div>
 
+        <div className="map-arrow-toggle">
+          <span>{t.map?.arrowheads || "Punta de flecha"}</span>
+          <button
+            className={!showArrows ? "active" : ""}
+            onClick={() => setShowArrows(false)}
+          >
+            {t.map?.noArrowhead || "Sin punta"}
+          </button>
+          <button
+            className={showArrows ? "active" : ""}
+            onClick={() => setShowArrows(true)}
+          >
+            {t.map?.withArrowhead || "Con flecha"}
+          </button>
+        </div>
+
         <div className="map-color-controls">
           <label className="map-color-control">
             <span>{t.map?.source || "Fuente"}</span>
@@ -285,6 +305,10 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
           <label className="map-color-control">
             <span>{t.map?.target || "Meta"}</span>
             <input type="color" value={targetColor} onChange={(event) => setTargetColor(event.target.value)} />
+          </label>
+          <label className="map-color-control">
+            <span>{t.map?.connectionColor || "Conexiones"}</span>
+            <input type="color" value={connectionColor} onChange={(event) => setConnectionColor(event.target.value)} />
           </label>
         </div>
 
@@ -314,40 +338,23 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <marker
+              id="arrow-custom"
+              markerWidth="10"
+              markerHeight="10"
+              refX="0"
+              refY="5"
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill={connectionColor} />
+            </marker>
           </defs>
 
           {/* Background */}
           <rect width="800" height="700" fill="transparent" />
 
-          {/* Connection lines */}
-          {connections.map((conn, idx) => {
-            const sourcePos = domainPositions.get(conn.source);
-            const targetPos = domainPositions.get(conn.target);
-            if (!sourcePos || !targetPos) return null;
-
-            const isHighlighted = 
-              !hoveredDomain || 
-              hoveredDomain === conn.source || 
-              hoveredDomain === conn.target;
-
-            const color = typologyColors[conn.typology] || "#94a3b8";
-
-            return (
-              <line
-                key={idx}
-                x1={sourcePos.x}
-                y1={sourcePos.y}
-                x2={targetPos.x}
-                y2={targetPos.y}
-                stroke={color}
-                strokeWidth={1 + Math.log(conn.count + 1) * 0.5}
-                opacity={isHighlighted ? 0.4 : 0.05}
-                style={{ transition: "opacity 0.3s" }}
-              />
-            );
-          })}
-
-          {/* Domain nodes */}
+          {/* Domain nodes - circles first */}
           {positionedDomains.map((domain) => {
             const isHovered = hoveredDomain === domain.name;
             const hasConnection = connections.some(
@@ -357,40 +364,94 @@ export function MetaphorMap({ corpus, metaphors, stats, activeTypology }: Metaph
             const color = domain.type === "source" ? sourceColor : targetColor;
 
             return (
-              <g
-                key={domain.name}
+              <circle
+                key={`node-${domain.name}`}
+                cx={domain.x}
+                cy={domain.y}
+                r={6 + Math.log(domain.count + 1)}
+                fill={color}
+                stroke="white"
+                strokeWidth={isHovered ? 3 : 2}
+                filter={isHovered ? "url(#map-glow)" : undefined}
+                opacity={!hoveredDomain || isHovered || hasConnection ? 1 : 0.2}
+                style={{ cursor: "pointer", transition: "all 0.3s" }}
                 onMouseEnter={() => setHoveredDomain(domain.name)}
                 onMouseLeave={() => setHoveredDomain(null)}
-                style={{ cursor: "pointer" }}
+              />
+            );
+          })}
+
+          {/* Connection lines - drawn after nodes so arrowheads are visible */}
+          {connections.map((conn, idx) => {
+            const sourcePos = domainPositions.get(conn.source);
+            const targetPos = domainPositions.get(conn.target);
+            if (!sourcePos || !targetPos) return null;
+
+            const isHighlighted =
+              !hoveredDomain ||
+              hoveredDomain === conn.source ||
+              hoveredDomain === conn.target;
+
+            let x1 = sourcePos.x;
+            let y1 = sourcePos.y;
+            let x2 = targetPos.x;
+            let y2 = targetPos.y;
+
+            if (showArrows) {
+              const dx = targetPos.x - sourcePos.x;
+              const dy = targetPos.y - sourcePos.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist > 0) {
+                const ux = dx / dist;
+                const uy = dy / dist;
+                const sourceR = getNodeRadius(sourcePos.count);
+                const targetR = getNodeRadius(targetPos.count);
+                const gap = 2;
+                x1 = sourcePos.x + ux * (sourceR + gap);
+                y1 = sourcePos.y + uy * (sourceR + gap);
+                x2 = targetPos.x - ux * (targetR + gap);
+                y2 = targetPos.y - uy * (targetR + gap);
+              }
+            }
+
+            return (
+              <line
+                key={idx}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke={connectionColor}
+                strokeWidth={1 + Math.log(conn.count + 1) * 0.5}
+                opacity={isHighlighted ? 0.4 : 0.05}
+                markerEnd={showArrows ? "url(#arrow-custom)" : undefined}
+                style={{ transition: "opacity 0.3s" }}
+              />
+            );
+          })}
+
+          {/* Domain node labels - drawn last to stay on top */}
+          {positionedDomains.map((domain) => {
+            const isHovered = hoveredDomain === domain.name;
+            const hasConnection = connections.some(
+              c => c.source === domain.name || c.target === domain.name
+            );
+            
+            return (
+              <text
+                key={`label-${domain.name}`}
+                x={domain.x + (domain.x < 400 ? -12 : 12)}
+                y={domain.y + 4}
+                textAnchor={domain.x < 400 ? "end" : "start"}
+                className="map-domain-label"
+                fill={isHovered ? "var(--primary)" : "var(--text)"}
+                fontWeight={isHovered ? 600 : 500}
+                fontSize={isHovered ? 12 : 10}
+                opacity={!hoveredDomain || isHovered || hasConnection ? 1 : 0.3}
+                style={{ transition: "all 0.3s", pointerEvents: "none" }}
               >
-                {/* Node circle */}
-                <circle
-                  cx={domain.x}
-                  cy={domain.y}
-                  r={6 + Math.log(domain.count + 1)}
-                  fill={color}
-                  stroke="white"
-                  strokeWidth={isHovered ? 3 : 2}
-                  filter={isHovered ? "url(#map-glow)" : undefined}
-                  opacity={!hoveredDomain || isHovered || hasConnection ? 1 : 0.2}
-                  style={{ transition: "all 0.3s" }}
-                />
-                
-                {/* Label - always visible but highlighted on hover */}
-                <text
-                  x={domain.x + (domain.x < 400 ? -12 : 12)}
-                  y={domain.y + 4}
-                  textAnchor={domain.x < 400 ? "end" : "start"}
-                  className="map-domain-label"
-                  fill={isHovered ? "var(--primary)" : "var(--text)"}
-                  fontWeight={isHovered ? 600 : 500}
-                  fontSize={isHovered ? 12 : 10}
-                  opacity={!hoveredDomain || isHovered || hasConnection ? 1 : 0.3}
-                  style={{ transition: "all 0.3s" }}
-                >
-                  {truncateDomainName(domain.name)}
-                </text>
-              </g>
+                {truncateDomainName(domain.name)}
+              </text>
             );
           })}
         </svg>

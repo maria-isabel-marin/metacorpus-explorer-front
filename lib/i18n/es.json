@@ -147,7 +147,12 @@
     "source": "Fuente",
     "target": "Meta",
     "connectionsOf": "Conexiones del dominio",
-    "connections": "conexiones"
+    "connections": "conexiones",
+    "arrowheads": "Punta de flecha",
+    "noArrowhead": "Sin punta",
+    "withArrowhead": "Con flecha",
+    "arrows": "Flechas",
+    "connectionColor": "Conexiones"
   },
   "statistics": {
     "eyebrow": "ANALÍTICA",
