@@ -4385,68 +4385,6 @@ textarea {
 }
 
 /* Statistics Grid Layout */
-.statistics-top-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin: 0 0 20px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-muted);
-}
-
-.statistics-top-control span {
-  margin: 0 6px 0 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-soft);
-}
-
-.statistics-top-control button {
-  padding: 5px 10px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--text-soft);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.statistics-top-control button:hover {
-  background: var(--surface);
-  color: var(--text);
-}
-
-.statistics-top-control button.active {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: #fff;
-}
-
-.statistics-custom-top {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.statistics-top-control .statistics-custom-top span {
-  margin: 0 0 0 4px;
-}
-
-.statistics-custom-top input {
-  width: 52px;
-  padding: 5px 6px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
 .statistics-grid {
   display: flex;
   flex-direction: column;
@@ -4492,6 +4430,89 @@ textarea {
 
 .stats-card .chart-header {
   padding-right: 76px;
+}
+
+/* Per-chart own controls (top selector + color pickers) */
+.chart-own-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+  padding: 8px 8px 12px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.chart-top-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chart-top-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-right: 2px;
+}
+
+.chart-top-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-top-buttons button {
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--surface-muted);
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chart-top-buttons button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.chart-top-buttons button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.chart-top-custom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-top-custom span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.chart-top-custom input {
+  width: 48px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.chart-color-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 /* Chart Header */

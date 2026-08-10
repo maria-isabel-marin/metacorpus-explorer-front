@@ -513,7 +513,15 @@ function HeatmapChart({ data, baseColor }: { data: DomainMatrixData | null | und
   );
 }
 
-function ExportableStatsCard({ children, filename }: { children: ReactNode; filename: string }) {
+function ExportableStatsCard({
+  children,
+  filename,
+  controls,
+}: {
+  children: ReactNode;
+  filename: string;
+  controls?: ReactNode;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -529,12 +537,82 @@ function ExportableStatsCard({ children, filename }: { children: ReactNode; file
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
         SVG
       </button>
+      {controls && (
+        <div className="chart-own-controls" data-chart-download>
+          {controls}
+        </div>
+      )}
       {children}
     </div>
   );
 }
 
 const TOP_LIMITS = [5, 10, 20] as const;
+
+// Per-chart "Top N" selector
+function TopSelector({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const { t } = useLanguage();
+
+  const handleCustom = (raw: string) => {
+    const limit = Number(raw);
+    if (Number.isSafeInteger(limit) && limit > 0) {
+      onChange(limit);
+    }
+  };
+
+  return (
+    <div className="chart-top-selector">
+      <span className="chart-top-label">{t.statistics?.show || "Mostrar"}</span>
+      <div className="chart-top-buttons">
+        {TOP_LIMITS.map((limit) => (
+          <button
+            key={limit}
+            type="button"
+            className={value === limit ? "active" : ""}
+            onClick={() => onChange(limit)}
+          >
+            Top {limit}
+          </button>
+        ))}
+      </div>
+      <label className="chart-top-custom">
+        <span>{t.statistics?.customTop || "Top personalizado"}</span>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={value}
+          onChange={(event) => handleCustom(event.target.value)}
+          aria-label={t.statistics?.customTop || "Top personalizado"}
+        />
+      </label>
+    </div>
+  );
+}
+
+// Per-chart color swatch control
+function ColorControl({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="sankey-color-control">
+      <span>{label}</span>
+      <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
 
 // Main Statistics Dashboard Component
 export function StatisticsDashboard({
@@ -549,7 +627,9 @@ export function StatisticsDashboard({
   domainMatrix,
 }: StatisticsDashboardProps) {
   const { t } = useLanguage();
-  const [topLimit, setTopLimit] = useState(10);
+  const [topLimitSource, setTopLimitSource] = useState(10);
+  const [topLimitTarget, setTopLimitTarget] = useState(10);
+  const [topLimitMetaphors, setTopLimitMetaphors] = useState(10);
   const totalExpressions = stats?.estadisticas_agregadas?.numero_registros ?? 0;
   const [sourceColor, setSourceColor] = useState(DEFAULT_SOURCE_COLOR);
   const [targetColor, setTargetColor] = useState(DEFAULT_TARGET_COLOR);
@@ -572,13 +652,6 @@ export function StatisticsDashboard({
     OTRA: t.statistics?.other || "Otra",
   };
 
-  const handleCustomTopLimit = (value: string) => {
-    const limit = Number(value);
-    if (Number.isSafeInteger(limit) && limit > 0) {
-      setTopLimit(limit);
-    }
-  };
-
   return (
     <div className="statistics-page">
       <header className="statistics-header">
@@ -587,95 +660,81 @@ export function StatisticsDashboard({
         <p className="subtitle">{t.statistics?.description || "Siete visualizaciones de la estructura metafórica del corpus."}</p>
       </header>
 
-      <div className="statistics-top-control">
-        <span>{t.statistics?.show || "Mostrar"}</span>
-        {TOP_LIMITS.map((limit) => (
-          <button
-            key={limit}
-            className={topLimit === limit ? "active" : ""}
-            onClick={() => setTopLimit(limit)}
-          >
-            Top {limit}
-          </button>
-        ))}
-        <label className="statistics-custom-top">
-          <span>{t.statistics?.customTop || "Top personalizado"}</span>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={topLimit}
-            onChange={(event) => handleCustomTopLimit(event.target.value)}
-            aria-label={t.statistics?.customTop || "Top personalizado"}
-          />
-        </label>
-      </div>
-
-      <div className="sankey-color-controls">
-        <label className="sankey-color-control">
-          <span>{t.map?.sourceDomain || "Fuente"}</span>
-          <input type="color" value={sourceColor} onChange={(event) => setSourceColor(event.target.value)} />
-        </label>
-        <label className="sankey-color-control">
-          <span>{t.map?.targetDomain || "Meta"}</span>
-          <input type="color" value={targetColor} onChange={(event) => setTargetColor(event.target.value)} />
-        </label>
-        {Object.entries(typologyColors).map(([key, color]) => (
-          <label key={key} className="sankey-color-control">
-            <span>{typologyLabels[key] || key}</span>
-            <input
-              type="color"
-              value={color}
-              onChange={(event) => setTypologyColor(key, event.target.value)}
-            />
-          </label>
-        ))}
-        <label className="sankey-color-control">
-          <span>Heatmap</span>
-          <input type="color" value={heatmapColor} onChange={(event) => setHeatmapColor(event.target.value)} />
-        </label>
-        {palette.map((color, index) => (
-          <label key={index} className="sankey-color-control">
-            <span>{t.statistics?.typology || "Tipología"} {index + 1}</span>
-            <input
-              type="color"
-              value={color}
-              onChange={(event) => setPaletteColor(index, event.target.value)}
-            />
-          </label>
-        ))}
-      </div>
-
       <div className="statistics-grid">
         {/* Top Row: Source and Target Domains */}
         <div className="stats-row two-columns">
-          <ExportableStatsCard filename="top-source-domains.svg">
+          <ExportableStatsCard
+            filename="top-source-domains.svg"
+            controls={
+              <>
+                <TopSelector value={topLimitSource} onChange={setTopLimitSource} />
+                <div className="chart-color-controls">
+                  <ColorControl label={t.map?.sourceDomain || "Fuente"} value={sourceColor} onChange={setSourceColor} />
+                </div>
+              </>
+            }
+          >
             <HorizontalBarChart
-              data={sourceDomains.slice(0, topLimit)}
+              data={sourceDomains.slice(0, topLimitSource)}
               color={sourceColor}
-              label={`Top ${topLimit} ${t.statistics?.sourceDomains || "dominios fuente"}`}
+              label={`Top ${topLimitSource} ${t.statistics?.sourceDomains || "dominios fuente"}`}
             />
           </ExportableStatsCard>
-          <ExportableStatsCard filename="top-target-domains.svg">
+          <ExportableStatsCard
+            filename="top-target-domains.svg"
+            controls={
+              <>
+                <TopSelector value={topLimitTarget} onChange={setTopLimitTarget} />
+                <div className="chart-color-controls">
+                  <ColorControl label={t.map?.targetDomain || "Meta"} value={targetColor} onChange={setTargetColor} />
+                </div>
+              </>
+            }
+          >
             <HorizontalBarChart
-              data={targetDomains.slice(0, topLimit)}
+              data={targetDomains.slice(0, topLimitTarget)}
               color={targetColor}
-              label={`Top ${topLimit} ${t.statistics?.targetDomains || "dominios meta"}`}
+              label={`Top ${topLimitTarget} ${t.statistics?.targetDomains || "dominios meta"}`}
             />
           </ExportableStatsCard>
         </div>
 
         {/* Second Row: Top Metaphors and Typology */}
         <div className="stats-row two-columns">
-          <ExportableStatsCard filename="top-conceptual-metaphors.svg">
+          <ExportableStatsCard
+            filename="top-conceptual-metaphors.svg"
+            controls={
+              <>
+                <TopSelector value={topLimitMetaphors} onChange={setTopLimitMetaphors} />
+                <div className="chart-color-controls">
+                  <ColorControl label={t.map?.sourceDomain || "Fuente"} value={sourceColor} onChange={setSourceColor} />
+                  <ColorControl label={t.map?.targetDomain || "Meta"} value={targetColor} onChange={setTargetColor} />
+                </div>
+              </>
+            }
+          >
             <MetaphorBarChart
-              data={topMetaphors.slice(0, topLimit)}
-              label={`Top ${topLimit} ${t.statistics?.conceptualMetaphors || "metáforas conceptuales"}`}
+              data={topMetaphors.slice(0, topLimitMetaphors)}
+              label={`Top ${topLimitMetaphors} ${t.statistics?.conceptualMetaphors || "metáforas conceptuales"}`}
               sourceColor={sourceColor}
               targetColor={targetColor}
             />
           </ExportableStatsCard>
-          <ExportableStatsCard filename="typology-distribution.svg">
+          <ExportableStatsCard
+            filename="typology-distribution.svg"
+            controls={
+              <div className="chart-color-controls">
+                {palette.map((color, index) => (
+                  <ColorControl
+                    key={index}
+                    label={`${t.statistics?.typology || "Tipología"} ${index + 1}`}
+                    value={color}
+                    onChange={(value) => setPaletteColor(index, value)}
+                  />
+                ))}
+              </div>
+            }
+          >
             <DonutChart
               data={typologyDistribution}
               total={totalExpressions}
@@ -687,21 +746,56 @@ export function StatisticsDashboard({
 
         {/* Third Row: Density Chart (full width) */}
         <div className="stats-row full-width">
-          <ExportableStatsCard filename="metaphorical-density.svg">
+          <ExportableStatsCard
+            filename="metaphorical-density.svg"
+            controls={
+              <div className="chart-color-controls">
+                {Object.entries(typologyColors).map(([key, color]) => (
+                  <ColorControl
+                    key={key}
+                    label={typologyLabels[key] || key}
+                    value={color}
+                    onChange={(value) => setTypologyColor(key, value)}
+                  />
+                ))}
+              </div>
+            }
+          >
             <DensityChart data={densityData} typologyColors={typologyColors} />
           </ExportableStatsCard>
         </div>
 
         {/* Fourth Row: Scatter Chart (full width) */}
         <div className="stats-row full-width">
-          <ExportableStatsCard filename="metaphor-distribution.svg">
+          <ExportableStatsCard
+            filename="metaphor-distribution.svg"
+            controls={
+              <div className="chart-color-controls">
+                {Object.entries(typologyColors).map(([key, color]) => (
+                  <ColorControl
+                    key={key}
+                    label={typologyLabels[key] || key}
+                    value={color}
+                    onChange={(value) => setTypologyColor(key, value)}
+                  />
+                ))}
+              </div>
+            }
+          >
             <ScatterChart data={proximityData} typologyColors={typologyColors} />
           </ExportableStatsCard>
         </div>
 
         {/* Fifth Row: Heatmap Chart (full width) */}
         <div className="stats-row full-width">
-          <ExportableStatsCard filename="domain-cooccurrence.svg">
+          <ExportableStatsCard
+            filename="domain-cooccurrence.svg"
+            controls={
+              <div className="chart-color-controls">
+                <ColorControl label="Heatmap" value={heatmapColor} onChange={setHeatmapColor} />
+              </div>
+            }
+          >
             <HeatmapChart data={domainMatrix} baseColor={heatmapColor} />
           </ExportableStatsCard>
         </div>
