@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useLanguage } from "@/lib/i18n/language-context";
 import type { DensityData, ProximityData, DomainMatrixData } from "@/lib/api";
 import { downloadHtmlAsSvg } from "@/lib/download-svg";
@@ -61,6 +61,14 @@ const DEFAULT_DENSITY_TYPOLOGY_COLORS: Record<string, string> = {
 };
 const DEFAULT_PALETTE = ["#3b5998", "#a0522d", "#4a7c59", "#d4a574", "#6b7280", "#9333ea", "#0891b2", "#dc2626"];
 const DEFAULT_HEATMAP_COLOR = "#2563eb";
+const DEFAULT_METAPHOR_COLOR = "#ea580c";
+
+// Deterministic color for a typology slice beyond the seed palette
+function getPaletteColor(index: number): string {
+  if (index < DEFAULT_PALETTE.length) return DEFAULT_PALETTE[index];
+  const hue = (index * 47) % 360;
+  return `hsl(${hue}, 65%, 50%)`;
+}
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const clean = hex.replace("#", "");
@@ -111,17 +119,15 @@ function HorizontalBarChart({
   );
 }
 
-// Metaphor Bar Chart (with colored bars based on source/target domain)
+// Metaphor Bar Chart — coloreado por número de expresiones (un solo color)
 function MetaphorBarChart({
   data,
   label,
-  sourceColor,
-  targetColor,
+  color,
 }: {
   data: MetaphorStat[];
   label: string;
-  sourceColor: string;
-  targetColor: string;
+  color: string;
 }) {
   const { t } = useLanguage();
   const maxValue = Math.max(...data.map((d) => d.total_expresiones), 1);
@@ -133,51 +139,39 @@ function MetaphorBarChart({
         <span className="chart-subtitle">{t.statistics?.byExpressions || "por número de expresiones"}</span>
       </div>
       <div className="bar-list">
-        {data.map((item) => {
-          // Determine color based on domain types
-          const hasSource = item.dominio_fuente?.nombre;
-          const hasTarget = item.dominio_meta?.nombre;
-          let barColor = sourceColor;
-          if (hasSource && hasTarget) {
-            barColor = targetColor;
-          } else if (!hasSource && hasTarget) {
-            barColor = targetColor;
-          }
-
-          return (
-            <div key={item.nombre} className="bar-item">
-              <span className="bar-label metaphor-name" title={item.nombre}>
-                {item.nombre}
-              </span>
-              <div className="bar-wrapper">
-                <div
-                  className="bar"
-                  style={{
-                    width: `${(item.total_expresiones / maxValue) * 100}%`,
-                    backgroundColor: barColor,
-                  }}
-                />
-              </div>
-              <span className="bar-value">{item.total_expresiones}</span>
+        {data.map((item) => (
+          <div key={item.nombre} className="bar-item">
+            <span className="bar-label metaphor-name" title={item.nombre}>
+              {item.nombre}
+            </span>
+            <div className="bar-wrapper">
+              <div
+                className="bar"
+                style={{
+                  width: `${(item.total_expresiones / maxValue) * 100}%`,
+                  backgroundColor: color,
+                }}
+              />
             </div>
-          );
-        })}
+            <span className="bar-value">{item.total_expresiones}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-// Donut Chart Component for Typology — datos reales
+// Donut Chart Component for Typology — colores dinámicos por tipología real
 function DonutChart({
   data,
   total,
   label,
-  palette,
+  colors,
 }: {
   data: TypologyStat[];
   total: number;
   label: string;
-  palette: string[];
+  colors: Record<string, string>;
 }) {
   const { t } = useLanguage();
   if (data.length === 0) {
@@ -192,7 +186,7 @@ function DonutChart({
     );
   }
 
-  const colored = data.map((d, i) => ({ ...d, color: palette[i % palette.length] }));
+  const colored = data.map((d) => ({ ...d, color: colors[d.nombre] || "#6b7280" }));
   const totalValue = colored.reduce((s, d) => s + d.total, 0);
   let currentAngle = 0;
 
@@ -634,15 +628,25 @@ export function StatisticsDashboard({
   const [sourceColor, setSourceColor] = useState(DEFAULT_SOURCE_COLOR);
   const [targetColor, setTargetColor] = useState(DEFAULT_TARGET_COLOR);
   const [typologyColors, setTypologyColors] = useState<Record<string, string>>(DEFAULT_DENSITY_TYPOLOGY_COLORS);
-  const [palette, setPalette] = useState<string[]>(DEFAULT_PALETTE);
+  const [typologyPaletteOverrides, setTypologyPaletteOverrides] = useState<Record<string, string>>({});
   const [heatmapColor, setHeatmapColor] = useState(DEFAULT_HEATMAP_COLOR);
+  const [metaphorColor, setMetaphorColor] = useState(DEFAULT_METAPHOR_COLOR);
 
   const setTypologyColor = (key: string, color: string) => {
     setTypologyColors((prev) => ({ ...prev, [key]: color }));
   };
 
-  const setPaletteColor = (index: number, color: string) => {
-    setPalette((prev) => prev.map((c, i) => (i === index ? color : c)));
+  // Paleta dinámica: una entrada por tipología realmente presente en los datos
+  const typologyPalette = useMemo(() => {
+    const map: Record<string, string> = {};
+    typologyDistribution.forEach((item, index) => {
+      map[item.nombre] = typologyPaletteOverrides[item.nombre] ?? getPaletteColor(index);
+    });
+    return map;
+  }, [typologyDistribution, typologyPaletteOverrides]);
+
+  const setTypologyPaletteColor = (nombre: string, color: string) => {
+    setTypologyPaletteOverrides((prev) => ({ ...prev, [nombre]: color }));
   };
 
   const typologyLabels: Record<string, string> = {
@@ -707,8 +711,7 @@ export function StatisticsDashboard({
               <>
                 <TopSelector value={topLimitMetaphors} onChange={setTopLimitMetaphors} />
                 <div className="chart-color-controls">
-                  <ColorControl label={t.map?.sourceDomain || "Fuente"} value={sourceColor} onChange={setSourceColor} />
-                  <ColorControl label={t.map?.targetDomain || "Meta"} value={targetColor} onChange={setTargetColor} />
+                  <ColorControl label={t.statistics?.conceptualMetaphors || "Metáforas"} value={metaphorColor} onChange={setMetaphorColor} />
                 </div>
               </>
             }
@@ -716,20 +719,19 @@ export function StatisticsDashboard({
             <MetaphorBarChart
               data={topMetaphors.slice(0, topLimitMetaphors)}
               label={`Top ${topLimitMetaphors} ${t.statistics?.conceptualMetaphors || "metáforas conceptuales"}`}
-              sourceColor={sourceColor}
-              targetColor={targetColor}
+              color={metaphorColor}
             />
           </ExportableStatsCard>
           <ExportableStatsCard
             filename="typology-distribution.svg"
             controls={
               <div className="chart-color-controls">
-                {palette.map((color, index) => (
+                {typologyDistribution.map((item) => (
                   <ColorControl
-                    key={index}
-                    label={`${t.statistics?.typology || "Tipología"} ${index + 1}`}
-                    value={color}
-                    onChange={(value) => setPaletteColor(index, value)}
+                    key={item.nombre}
+                    label={item.nombre}
+                    value={typologyPalette[item.nombre]}
+                    onChange={(value) => setTypologyPaletteColor(item.nombre, value)}
                   />
                 ))}
               </div>
@@ -739,7 +741,7 @@ export function StatisticsDashboard({
               data={typologyDistribution}
               total={totalExpressions}
               label={t.statistics?.typology || "Tipología"}
-              palette={palette}
+              colors={typologyPalette}
             />
           </ExportableStatsCard>
         </div>
