@@ -4,22 +4,22 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import type { ConceptualMetaphor } from "@/lib/metaphors";
 import { downloadSvgMarkup } from "@/lib/download-svg";
 import { useLanguage } from "@/lib/i18n/language-context";
-import type { Dictionary } from "@/lib/i18n";
 
 type NetworkGraphProps = {
   metaphors: ConceptualMetaphor[];
   focusRole: "source" | "target";
 };
 
-const DEFAULT_TYPOLOGY_COLORS: Record<string, string> = {
+// Colores fijos solo para distinguir visualmente los botones de filtro por tipología
+const FILTER_DOT_COLORS: Record<string, string> = {
   ESTRUCTURAL: "#64748b",
   ONTOLOGICA: "#dc2626",
   ORIENTACIONAL: "#16a34a",
-  OTRA: "#8b5cf6",
 };
 
 const DEFAULT_SOURCE_NODE_COLOR = "#3b82f6";
 const DEFAULT_TARGET_NODE_COLOR = "#f59e0b";
+const DEFAULT_CONNECTION_COLOR = "#8b5cf6";
 
 const TYPOLOGY_FILTERS = [
   { key: "all", label: "Todas" },
@@ -27,16 +27,6 @@ const TYPOLOGY_FILTERS = [
   { key: "ONTOLOGICA", label: "Ontológica" },
   { key: "ORIENTACIONAL", label: "Orientacional" },
 ];
-
-function typologyColorLabel(key: string, t: Dictionary): string {
-  const labels: Record<string, string> = {
-    ESTRUCTURAL: t.map?.structuralFull || "Estructural",
-    ONTOLOGICA: t.map?.ontologicalFull || "Ontológica",
-    ORIENTACIONAL: t.map?.orientationalFull || "Orientacional",
-    OTRA: t.map?.otherRelations || "Otras relaciones",
-  };
-  return labels[key] ?? key.charAt(0) + key.slice(1).toLowerCase();
-}
 
 export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
   const { t } = useLanguage();
@@ -50,11 +40,7 @@ export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [sourceNodeColor, setSourceNodeColor] = useState(DEFAULT_SOURCE_NODE_COLOR);
   const [targetNodeColor, setTargetNodeColor] = useState(DEFAULT_TARGET_NODE_COLOR);
-  const [typologyColors, setTypologyColors] = useState<Record<string, string>>(DEFAULT_TYPOLOGY_COLORS);
-
-  const setTypologyColor = (key: string, color: string) => {
-    setTypologyColors((prev) => ({ ...prev, [key]: color }));
-  };
+  const [connectionColor, setConnectionColor] = useState(DEFAULT_CONNECTION_COLOR);
 
   const { nodes, edges, maxOutDegree } = useMemo(() => {
     const filtered =
@@ -111,13 +97,12 @@ export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
       const edgeKey = `${s}→${t}`;
       if (!edgeSeen.has(edgeKey)) {
         edgeSeen.add(edgeKey);
-        const color = typologyColors[(m.typology ?? "OTRA").toUpperCase()] ?? typologyColors.OTRA;
-        edgeList.push({ from: s, to: t, color, width: Math.max(1, Math.min(5, m.expressions)) });
+        edgeList.push({ from: s, to: t, color: connectionColor, width: Math.max(1, Math.min(5, m.expressions)) });
       }
     }
 
     return { nodes: Array.from(nodeMap.values()), edges: edgeList, maxOutDegree: maxOut };
-  }, [metaphors, typologyFilter, minRelations, maxRelations, focusRole, typologyColors]);
+  }, [metaphors, typologyFilter, minRelations, maxRelations, focusRole, connectionColor]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -329,7 +314,7 @@ export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
             {f.key !== "all" && (
               <span
                 className="sankey-filter-dot"
-                style={{ backgroundColor: typologyColors[f.key] }}
+                style={{ backgroundColor: FILTER_DOT_COLORS[f.key] }}
               />
             )}
             {f.key === "all"
@@ -398,16 +383,14 @@ export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
             onChange={(event) => setTargetNodeColor(event.target.value)}
           />
         </label>
-        {Object.entries(typologyColors).map(([key, color]) => (
-          <label key={key} className="sankey-color-control">
-            <span>{typologyColorLabel(key, t)}</span>
-            <input
-              type="color"
-              value={color}
-              onChange={(event) => setTypologyColor(key, event.target.value)}
-            />
-          </label>
-        ))}
+        <label className="sankey-color-control">
+          <span>{t.map?.connectionColor || "Conexiones"}</span>
+          <input
+            type="color"
+            value={connectionColor}
+            onChange={(event) => setConnectionColor(event.target.value)}
+          />
+        </label>
       </div>
 
       <div className="network-canvas-wrap chart-download-wrap">
@@ -477,15 +460,13 @@ export function NetworkGraph({ metaphors, focusRole }: NetworkGraphProps) {
           <span className="network-legend-dot" style={{ background: targetNodeColor }} />
           {t.map?.targetDomain || "Dominio meta"}
         </span>
-        {Object.entries(typologyColors).map(([k, c]) => (
-          <span key={k} className="network-legend-item">
-            <span
-              className="network-legend-line"
-              style={{ background: c }}
-            />
-            {typologyColorLabel(k, t)}
-          </span>
-        ))}
+        <span className="network-legend-item">
+          <span
+            className="network-legend-line"
+            style={{ background: connectionColor }}
+          />
+          {t.map?.connectionColor || "Conexiones"}
+        </span>
       </div>
     </div>
   );
