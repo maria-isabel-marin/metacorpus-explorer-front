@@ -127,6 +127,7 @@
     "structuralFull": "Estructural",
     "ontologicalFull": "Ontológica",
     "orientationalFull": "Orientacional",
+    "otherRelations": "Otras relaciones",
     "minExpressions": "MÍN. EXPRESIONES",
     "statistics": "ESTADÍSTICAS",
     "domains": "Dominios",
@@ -146,13 +147,19 @@
     "source": "Fuente",
     "target": "Meta",
     "connectionsOf": "Conexiones del dominio",
-    "connections": "conexiones"
+    "connections": "conexiones",
+    "arrowheads": "Punta de flecha",
+    "noArrowhead": "Sin punta",
+    "withArrowhead": "Con flecha",
+    "arrows": "Flechas",
+    "connectionColor": "Conexiones"
   },
   "statistics": {
     "eyebrow": "ANALÍTICA",
     "title": "Estadísticas y gráficos",
     "description": "Siete visualizaciones de la estructura metafórica del corpus.",
     "show": "Mostrar",
+    "customTop": "Top personalizado",
     "sourceDomains": "dominios fuente",
     "targetDomains": "dominios meta",
     "conceptualMetaphors": "metáforas conceptuales",

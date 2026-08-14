@@ -10,6 +10,8 @@ type SankeyChartProps = {
   focusRole: "source" | "target";
 };
 
+type LinkColorMode = "typology" | "source" | "target" | "uniform" | "gradient";
+
 type SankeyNode = {
   id: string;
   label: string;
@@ -46,8 +48,8 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   OTRA: "Otra",
 };
 
-const SOURCE_COLOR = "#3b82f6";
-const TARGET_COLOR = "#f59e0b";
+const DEFAULT_SOURCE_COLOR = "#3b82f6";
+const DEFAULT_TARGET_COLOR = "#f59e0b";
 const OTHER_COLOR = "#94a3b8";
 
 const NODE_WIDTH = 16;
@@ -56,7 +58,8 @@ const LABEL_GAP = 8;
 const PADDING_TOP = 38; // extra room for SVG column headers
 const PADDING_BOTTOM = 20;
 const PADDING_H = 40; // chart bars pushed to the edges; labels flow inward
-const NODE_H = 28; // fixed height per node
+const NODE_MIN_H = 18; // minimum node height
+const BASE_NODE_H = 28; // reference average node height
 
 function typologyKey(typology?: string): string {
   return (typology ?? "OTRA")
@@ -71,7 +74,9 @@ function buildSankey(
   typologyFilter: string,
   focusRole: "source" | "target",
   minConnections: number,
-  width: number
+  width: number,
+  sourceColor: string,
+  targetColor: string
 ): { nodes: SankeyNode[]; links: SankeyLink[]; height: number; maxConnections: number } {
   const filtered =
     (typologyFilter === "all"
@@ -114,13 +119,91 @@ function buildSankey(
   if (sourceValues.size === 0) return { nodes: [], links: [], height: 400, maxConnections };
 
   const totalValue = Array.from(sourceValues.values()).reduce((a, b) => a + b, 0);
+  const targetTotal = Array.from(targetValues.values()).reduce((a, b) => a + b, 0);
 
   // All nodes sorted by value desc — no grouping
   const sortedSource = Array.from(sourceValues.entries()).sort((a, b) => b[1] - a[1]);
   const sortedTarget = Array.from(targetValues.entries()).sort((a, b) => b[1] - a[1]);
 
   const maxNodes = Math.max(sortedSource.length, sortedTarget.length);
-  const height = PADDING_TOP + PADDING_BOTTOM + maxNodes * (NODE_H + NODE_GAP);
+
+  const MIN_LINK_THICKNESS = 1.5;
+  const MAX_LINK_THICKNESS = 22;
+
+  function columnHeight(
+    entries: [string, number][],
+    heights: Map<string, number>
+  ): number {
+    return (
+      Array.from(heights.values()).reduce((a, b) => a + b, 0) +
+      (entries.length - 1) * NODE_GAP
+    );
+  }
+
+  // Each node's height is the sum of its link thicknesses, capped per link.
+  // This keeps thin links (few expressions) visually thin and prevents overflow.
+  function computeLinkThicknesses(scale: number): Map<string, number> {
+    const thicknesses = new Map<string, number>();
+    flowMap.forEach(({ value }, key) => {
+      thicknesses.set(
+        key,
+        Math.max(MIN_LINK_THICKNESS, Math.min(MAX_LINK_THICKNESS, value * scale))
+      );
+    });
+    return thicknesses;
+  }
+
+  function computeNodeHeightsFromLinks(
+    entries: [string, number][],
+    linkThicknesses: Map<string, number>,
+    isSource: boolean
+  ): Map<string, number> {
+    const heights = new Map<string, number>();
+    entries.forEach(([name]) => {
+      let totalThickness = 0;
+      linkThicknesses.forEach((thickness, key) => {
+        const [sourceName, targetName] = key.split("||");
+        if (isSource ? sourceName === name : targetName === name) {
+          totalThickness += thickness;
+        }
+      });
+      heights.set(name, Math.max(NODE_MIN_H, totalThickness));
+    });
+    return heights;
+  }
+
+  let nodesAreaHeight = Math.max(
+    maxNodes * BASE_NODE_H + (maxNodes - 1) * NODE_GAP,
+    sortedSource.length * NODE_MIN_H + (sortedSource.length - 1) * NODE_GAP,
+    sortedTarget.length * NODE_MIN_H + (sortedTarget.length - 1) * NODE_GAP
+  );
+
+  const maxLinkValue = Math.max(1, ...Array.from(flowMap.values()).map((v) => v.value));
+
+  // Scale so the thickest single link hits the cap; smaller links become visibly thinner.
+  let linkScale = MAX_LINK_THICKNESS / maxLinkValue;
+  let linkThicknesses = computeLinkThicknesses(linkScale);
+  let sourceHeights = computeNodeHeightsFromLinks(sortedSource, linkThicknesses, true);
+  let targetHeights = computeNodeHeightsFromLinks(sortedTarget, linkThicknesses, false);
+
+  // Iterate so the link scale matches the final node area
+  for (let i = 0; i < 4; i++) {
+    const nextArea = Math.max(
+      columnHeight(sortedSource, sourceHeights),
+      columnHeight(sortedTarget, targetHeights)
+    );
+    if (Math.abs(nextArea - nodesAreaHeight) < 1) break;
+    nodesAreaHeight = nextArea;
+    linkScale = MAX_LINK_THICKNESS / maxLinkValue;
+    linkThicknesses = computeLinkThicknesses(linkScale);
+    sourceHeights = computeNodeHeightsFromLinks(sortedSource, linkThicknesses, true);
+    targetHeights = computeNodeHeightsFromLinks(sortedTarget, linkThicknesses, false);
+  }
+
+  const sourceColumnHeight = columnHeight(sortedSource, sourceHeights);
+  const targetColumnHeight = columnHeight(sortedTarget, targetHeights);
+  nodesAreaHeight = Math.max(sourceColumnHeight, targetColumnHeight);
+  const height = PADDING_TOP + nodesAreaHeight + PADDING_BOTTOM;
 
   const sourceX = focusRole === "source" ? PADDING_H : width - PADDING_H - NODE_WIDTH;
   const targetX = focusRole === "source" ? width - PADDING_H - NODE_WIDTH : PADDING_H;
@@ -129,10 +212,12 @@ function buildSankey(
     entries: [string, number][],
     side: "source" | "target",
     x: number,
-    color: string
+    color: string,
+    heights: Map<string, number>
   ): SankeyNode[] => {
     let cursor = PADDING_TOP;
     return entries.map(([name, value]) => {
+      const nodeHeight = heights.get(name) ?? BASE_NODE_H;
       const node: SankeyNode = {
         id: `${side === "source" ? "s" : "t"}:${name}`,
         label: name,
@@ -140,17 +225,17 @@ function buildSankey(
         value,
         isOther: false,
         y: cursor,
-        height: NODE_H,
+        height: nodeHeight,
         color,
         x,
       };
-      cursor += NODE_H + NODE_GAP;
+      cursor += nodeHeight + NODE_GAP;
       return node;
     });
   };
 
-  const sourceNodes = buildNodes(sortedSource, "source", sourceX, SOURCE_COLOR);
-  const targetNodes = buildNodes(sortedTarget, "target", targetX, TARGET_COLOR);
+  const sourceNodes = buildNodes(sortedSource, "source", sourceX, sourceColor, sourceHeights);
+  const targetNodes = buildNodes(sortedTarget, "target", targetX, targetColor, targetHeights);
 
   const sourceOffsets = new Map<string, number>(sourceNodes.map((n) => [n.id, n.y]));
   const targetOffsets = new Map<string, number>(targetNodes.map((n) => [n.id, n.y]));
@@ -164,7 +249,7 @@ function buildSankey(
     const tNode = targetNodes.find((n) => n.label === tgt);
     if (!sNode || !tNode || value === 0) continue;
 
-    const thickness = Math.max(1.5, (value / totalValue) * (height - PADDING_TOP - PADDING_BOTTOM));
+    const thickness = linkThicknesses.get(key) ?? MIN_LINK_THICKNESS;
     const sOff = sourceOffsets.get(sNode.id) ?? sNode.y;
     const tOff = targetOffsets.get(tNode.id) ?? tNode.y;
 
@@ -226,6 +311,10 @@ export function SankeyChart({ metaphors, focusRole }: SankeyChartProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [typologyFilter, setTypologyFilter] = useState("all");
   const [minConnections, setMinConnections] = useState(0);
+  const [sourceColor, setSourceColor] = useState(DEFAULT_SOURCE_COLOR);
+  const [targetColor, setTargetColor] = useState(DEFAULT_TARGET_COLOR);
+  const [linkColorMode, setLinkColorMode] = useState<LinkColorMode>("typology");
+  const [uniformLinkColor, setUniformLinkColor] = useState(OTHER_COLOR);
   const [containerWidth, setContainerWidth] = useState(860);
   const containerRef = useRef<HTMLDivElement>(null);
   const sankeySvgRef = useRef<SVGSVGElement>(null);
@@ -244,8 +333,8 @@ export function SankeyChart({ metaphors, focusRole }: SankeyChartProps) {
   const WIDTH = containerWidth;
 
   const { nodes, links, height, maxConnections } = useMemo(
-    () => buildSankey(metaphors, typologyFilter, focusRole, minConnections, WIDTH),
-    [metaphors, typologyFilter, focusRole, minConnections, WIDTH]
+    () => buildSankey(metaphors, typologyFilter, focusRole, minConnections, WIDTH, sourceColor, targetColor),
+    [metaphors, typologyFilter, focusRole, minConnections, WIDTH, sourceColor, targetColor]
   );
 
   const sourceEdgeX = focusRole === "source" ? PADDING_H + NODE_WIDTH : WIDTH - PADDING_H - NODE_WIDTH;
@@ -335,6 +424,48 @@ export function SankeyChart({ metaphors, focusRole }: SankeyChartProps) {
         <span>≥ {Math.min(minConnections, maxConnections)} {t.map?.connections || "conexiones"}</span>
       </div>
 
+      <div className="sankey-color-controls">
+        <label className="sankey-color-control">
+          <span>Fuente</span>
+          <input
+            type="color"
+            value={sourceColor}
+            onChange={(event) => setSourceColor(event.target.value)}
+          />
+        </label>
+        <label className="sankey-color-control">
+          <span>Meta</span>
+          <input
+            type="color"
+            value={targetColor}
+            onChange={(event) => setTargetColor(event.target.value)}
+          />
+        </label>
+        <label className="sankey-color-control sankey-link-mode-control">
+          <span>Links</span>
+          <select
+            value={linkColorMode}
+            onChange={(event) => setLinkColorMode(event.target.value as LinkColorMode)}
+          >
+            <option value="typology">Tipología</option>
+            <option value="source">Fuente</option>
+            <option value="target">Meta</option>
+            <option value="uniform">Uniforme</option>
+            <option value="gradient">Fuente → Meta</option>
+          </select>
+        </label>
+        {linkColorMode === "uniform" && (
+          <label className="sankey-color-control">
+            <span>Color</span>
+            <input
+              type="color"
+              value={uniformLinkColor}
+              onChange={(event) => setUniformLinkColor(event.target.value)}
+            />
+          </label>
+        )}
+      </div>
+
       {nodes.length === 0 ? (
         <div className="sankey-empty">
           <p>No hay datos de dominio disponibles para mostrar.</p>
@@ -410,12 +541,25 @@ export function SankeyChart({ metaphors, focusRole }: SankeyChartProps) {
 
           <defs>
             {links.map((l, i) => {
-              const color =
+              const typologyColor =
                 TYPOLOGY_COLORS[l.typology?.toUpperCase()] ?? TYPOLOGY_COLORS.OTRA;
+              let startColor = sourceColor;
+              let endColor = typologyColor;
+              if (linkColorMode === "source") {
+                endColor = sourceColor;
+              } else if (linkColorMode === "target") {
+                startColor = targetColor;
+                endColor = targetColor;
+              } else if (linkColorMode === "uniform") {
+                startColor = uniformLinkColor;
+                endColor = uniformLinkColor;
+              } else if (linkColorMode === "gradient") {
+                endColor = targetColor;
+              }
               return (
                 <linearGradient key={i} id={`lg-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor={SOURCE_COLOR} stopOpacity="0.5" />
-                  <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+                  <stop offset="0%" stopColor={startColor} stopOpacity="0.5" />
+                  <stop offset="100%" stopColor={endColor} stopOpacity="0.5" />
                 </linearGradient>
               );
             })}
