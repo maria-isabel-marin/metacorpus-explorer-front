@@ -11,7 +11,7 @@ type DomainMapProps = {
 type DomainNode = {
   id: string;
   label: string;
-  type: "source" | "target" | "both";
+  type: "source" | "target";
   weight: number;
   x: number;
   y: number;
@@ -26,7 +26,6 @@ type DomainEdge = {
 
 const SOURCE_COLOR = "#2563eb";
 const TARGET_COLOR = "#d97706";
-const BOTH_COLOR = "#7c3aed";
 const EDGE_COLOR = "#94a3b8";
 
 export function DomainMap({ metaphors }: DomainMapProps) {
@@ -51,23 +50,20 @@ export function DomainMap({ metaphors }: DomainMapProps) {
       edgeMap.set(edgeKey, (edgeMap.get(edgeKey) ?? 0) + m.expressions);
     }
 
-    const allDomains = new Set([...sourceSet.keys(), ...targetSet.keys()]);
-    const domainArray = [...allDomains];
-
     const cx = 300;
     const cy = 300;
     const radius = 230;
 
-    const domainNodes: DomainNode[] = domainArray.map((name, i) => {
-      const angle = (i / domainArray.length) * 2 * Math.PI - Math.PI / 2;
-      const isSource = sourceSet.has(name);
-      const isTarget = targetSet.has(name);
-      const weight = (sourceSet.get(name) ?? 0) + (targetSet.get(name) ?? 0);
+    const sourceEntries = [...sourceSet.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const targetEntries = [...targetSet.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
+    const sourceNodes: DomainNode[] = sourceEntries.map(([name, weight], i) => {
+      const count = sourceEntries.length || 1;
+      const angle = Math.PI / 2 + (Math.PI * (i + 0.5)) / count;
       return {
-        id: name,
+        id: `s:${name}`,
         label: name,
-        type: isSource && isTarget ? "both" : isSource ? "source" : "target",
+        type: "source",
         weight,
         x: cx + radius * Math.cos(angle),
         y: cy + radius * Math.sin(angle),
@@ -75,9 +71,25 @@ export function DomainMap({ metaphors }: DomainMapProps) {
       };
     });
 
+    const targetNodes: DomainNode[] = targetEntries.map(([name, weight], i) => {
+      const count = targetEntries.length || 1;
+      const angle = -Math.PI / 2 + (Math.PI * (i + 0.5)) / count;
+      return {
+        id: `t:${name}`,
+        label: name,
+        type: "target",
+        weight,
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle),
+        angle,
+      };
+    });
+
+    const domainNodes: DomainNode[] = [...sourceNodes, ...targetNodes];
+
     const domainEdges: DomainEdge[] = [...edgeMap.entries()].map(([key, weight]) => {
       const [source, target] = key.split("|||");
-      return { source, target, weight };
+      return { source: `s:${source}`, target: `t:${target}`, weight };
     });
 
     const maxW = Math.max(...domainNodes.map((n) => n.weight), 1);
@@ -109,9 +121,7 @@ export function DomainMap({ metaphors }: DomainMapProps) {
   }
 
   function getNodeColor(node: DomainNode) {
-    if (node.type === "both") return BOTH_COLOR;
-    if (node.type === "source") return SOURCE_COLOR;
-    return TARGET_COLOR;
+    return node.type === "source" ? SOURCE_COLOR : TARGET_COLOR;
   }
 
   function getNodeRadius(node: DomainNode) {
@@ -266,10 +276,6 @@ export function DomainMap({ metaphors }: DomainMapProps) {
         <span className="domain-map-legend-item">
           <span className="domain-map-legend-dot" style={{ background: TARGET_COLOR }} />
           {t.explorer.target.replace(":", "")}
-        </span>
-        <span className="domain-map-legend-item">
-          <span className="domain-map-legend-dot" style={{ background: BOTH_COLOR }} />
-          {t.explorer.source.replace(":", "")} + {t.explorer.target.replace(":", "")}
         </span>
       </div>
     </div>
